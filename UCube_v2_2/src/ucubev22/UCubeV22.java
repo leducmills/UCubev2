@@ -37,7 +37,8 @@ public class UCubeV22 extends PApplet {
 	Point3d[] redPoints;
 	Point3d[] savedRedPoints;
 	Mesh3D redMesh = new TriangleMesh();
-	//Vec3D[] redVectors;
+	//Vec3D[] redSTLVectors = new Vec3D[0];
+	ArrayList<Vec3D> redSTLVectors = new ArrayList<Vec3D>();
 	boolean doRedHull = false;
 	ArrayList<Vec3D> redVectors = new ArrayList<Vec3D>();
 
@@ -45,7 +46,7 @@ public class UCubeV22 extends PApplet {
 	Point3d[] bluePoints;
 	Point3d[] savedBluePoints;
 	Mesh3D blueMesh = new TriangleMesh();
-//	Vec3D[] blueVectors;
+	ArrayList<Vec3D> blueSTLVectors = new ArrayList<Vec3D>();
 	boolean doBlueHull = false;
 	ArrayList<Vec3D> blueVectors = new ArrayList<Vec3D>();
 
@@ -218,18 +219,20 @@ public class UCubeV22 extends PApplet {
 									
 									
 									
-									if(activeColor == red) {
+									if(activeColor == red && !redVectors.contains(masterVectArray[counter])) {
 										
 										redVectors.add(masterVectArray[counter]);
 										println("added red");
+										initRedPoints();
 										
 									}
 									
 									
-									if(activeColor == green) {
+									if(activeColor == green && !blueVectors.contains(masterVectArray[counter])) {
 										
 										blueVectors.add(masterVectArray[counter]);
 										println("added green");
+										initBluePoints();
 									}
 									
 									
@@ -255,11 +258,13 @@ public class UCubeV22 extends PApplet {
 								if(bit == '0') {																		
 										
 										redVectors.remove(masterVectArray[counter]);
+										initRedPoints();
 										//println("removed red");
 										
 										
 										
 										blueVectors.remove(masterVectArray[counter]);
+										initBluePoints();
 										//println("removed green");
 									
 									
@@ -317,12 +322,14 @@ public class UCubeV22 extends PApplet {
 					
 					if(doRedHull == true) {
 						if(redVectors.size() > 0) {
+						initRedPoints();	
 						redHull();
 						}
 					}
 					
 					if(doBlueHull == true) {
 						if(blueVectors.size() > 0) {
+					    initBluePoints();
 						blueHull();
 						}
 					}
@@ -800,9 +807,9 @@ public class UCubeV22 extends PApplet {
 //			// blueVectors[i+2]);
 //		}
 		
-		for(int i = 0; i < blueVectors.size(); i+=3) {
+		for(int i = 0; i < blueSTLVectors.size(); i+=3) {
 			
-			blueMesh.addFace(blueVectors.get(i), blueVectors.get(i+1), blueVectors.get(i+2));
+			blueMesh.addFace(blueSTLVectors.get(i), blueSTLVectors.get(i+1), blueSTLVectors.get(i+2));
 			
 		}
 
@@ -814,15 +821,15 @@ public class UCubeV22 extends PApplet {
 
 		TriangleMesh myRedSTL = new TriangleMesh();
 
-//		for (int i = 0; i < redVectors.length; i += 3) {
+//		for (int i = 0; i < redSTLVectors.length; i += 3) {
 //
-//			redMesh.addFace(redVectors[i], redVectors[i + 1], redVectors[i + 2]);
+//			redMesh.addFace(redSTLVectors[i], redSTLVectors[i + 1], redSTLVectors[i + 2]);
 //			// println(redVectors[i] + " " + redVectors[i+1] + " " +
 //			// redVectors[i+2]);
 //		}
 		
-		for(int i = 0; i < redVectors.size(); i+=3) {
-			redMesh.addFace(redVectors.get(i), redVectors.get(i+1), redVectors.get(i+2));
+		for(int i = 0; i < redSTLVectors.size(); i+=3) {
+			redMesh.addFace(redSTLVectors.get(i), redSTLVectors.get(i+1), redSTLVectors.get(i+2));
 		}
 
 		myRedSTL.addMesh(redMesh);
@@ -1213,11 +1220,13 @@ public class UCubeV22 extends PApplet {
 	// Functions----------------------------------//
 
 	// colorHulls
-	public void redHull() {
-
-		//println("redhull");
-		redPoints = new Point3d[redVectors.size()];
-		//redPoints = new Point3d[0];
+	
+	
+	public void initRedPoints() {
+		
+		
+		//redPoints = new Point3d[redVectors.size()];
+		redPoints = new Point3d[0];
 		
 		
 		for(int i = 0; i < redVectors.size(); i++) {
@@ -1228,9 +1237,38 @@ public class UCubeV22 extends PApplet {
 			
 			Point3d tempPnt = new Point3d(x,y,z);
 			
-			redPoints[i] = new Point3d(x,y,z);
-			//redPoints = (Point3d[]) append(redPoints, tempPnt);
+			//redPoints[i] = new Point3d(x,y,z);
+			redPoints = (Point3d[]) append(redPoints, tempPnt);
 		}
+		
+	}
+	
+	public void initBluePoints() {
+		
+		
+		//redPoints = new Point3d[redVectors.size()];
+		bluePoints = new Point3d[0];
+		
+		
+		for(int i = 0; i < blueVectors.size(); i++) {
+			
+			float x = blueVectors.get(i).x;
+			float y = blueVectors.get(i).y;
+			float z = blueVectors.get(i).z;
+			
+			Point3d tempPnt = new Point3d(x,y,z);
+			
+			//redPoints[i] = new Point3d(x,y,z);
+			bluePoints = (Point3d[]) append(bluePoints, tempPnt);
+		}
+		
+	}
+	
+	
+	public void redHull() {
+
+		//println("redhull");
+		
 		
 		
 		int numPoints = redPoints.length;
@@ -1267,7 +1305,7 @@ public class UCubeV22 extends PApplet {
 				savedRedPoints = new Point3d[0];
 				// vectors = new Vec3D[0];
 				//redVectors = new Vec3D[0];
-				redVectors.clear();
+				//redVectors.clear();
 
 				beginShape(TRIANGLE_STRIP);
 				strokeWeight(1);
@@ -1289,33 +1327,33 @@ public class UCubeV22 extends PApplet {
 						Vec3D tempVect = new Vec3D(x, y, z);
 						savedRedPoints = (Point3d[]) append(savedRedPoints,
 								pnt2);
-						//redVectors = (Vec3D[]) append(redVectors, tempVect);
+						//redSTLVectors = (Vec3D[]) append(redVectors, tempVect);
 						// vectors = (Vec3D[])append(vectors, tempVect);
-						redVectors.add(tempVect);
+						redSTLVectors.add(tempVect);
 					}
 				}
 				endShape(CLOSE);
 				// reDraw = false;
 			}
 
-			else if (reDraw == false) {
-				// println(reDraw);
-				beginShape(TRIANGLE_STRIP);
-				strokeWeight(1);
-				fill(red);
-				stroke(red);
-				if (doFill == false) {
-					noFill();
-				}
-				for (int i = 0; i < savedRedPoints.length; i++) {
-
-					float x = (float) savedRedPoints[i].x;
-					float y = (float) savedRedPoints[i].y;
-					float z = (float) savedRedPoints[i].z;
-					vertex(x, y, z);
-				}
-				endShape(CLOSE);
-			}
+//			else if (reDraw == false) {
+//				// println(reDraw);
+//				beginShape(TRIANGLE_STRIP);
+//				strokeWeight(1);
+//				fill(red);
+//				stroke(red);
+//				if (doFill == false) {
+//					noFill();
+//				}
+//				for (int i = 0; i < savedRedPoints.length; i++) {
+//
+//					float x = (float) savedRedPoints[i].x;
+//					float y = (float) savedRedPoints[i].y;
+//					float z = (float) savedRedPoints[i].z;
+//					vertex(x, y, z);
+//				}
+//				endShape(CLOSE);
+//			}
 		}
 	}
 
@@ -1368,7 +1406,7 @@ public class UCubeV22 extends PApplet {
 				savedBluePoints = new Point3d[0];
 				// vectors = new Vec3D[0];
 				//blueVectors = new Vec3D[0];
-				blueVectors.clear();
+				//blueVectors.clear();
 
 				beginShape(TRIANGLE_STRIP);
 				strokeWeight(1);
@@ -1391,7 +1429,7 @@ public class UCubeV22 extends PApplet {
 						savedPoints = (Point3d[]) append(savedBluePoints, pnt2);
 						// vectors = (Vec3D[])append(vectors, tempVect);
 						//blueVectors = (Vec3D[]) append(blueVectors, tempVect);
-						blueVectors.add(tempVect);
+						blueSTLVectors.add(tempVect);
 					}
 				}
 				endShape(CLOSE);
