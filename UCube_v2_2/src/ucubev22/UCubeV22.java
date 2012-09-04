@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 public class UCubeV22 extends PApplet {
 
@@ -26,13 +27,16 @@ public class UCubeV22 extends PApplet {
 	ControlP5 controlP5;
 	Nav3D nav; // camera controller
 
+	
+	//regular hull (all points)
 	QuickHull3D hull = new QuickHull3D(); // init quickhull for hull
-	QuickHull3D knotHull = new QuickHull3D(); // init quickhull for knot
+	
 	Point3d[] points; // init Point3d array
 	Point3d[] savedPoints;
 	Mesh3D mesh = new TriangleMesh(); // triangle mesh for convex hull
 	Vec3D[] vectors;
 
+	//red hull
 	QuickHull3D redHull = new QuickHull3D();
 	Point3d[] redPoints;
 	Point3d[] savedRedPoints;
@@ -42,6 +46,7 @@ public class UCubeV22 extends PApplet {
 	boolean doRedHull = false;
 	ArrayList<Vec3D> redVectors = new ArrayList<Vec3D>();
 
+	//blue / green hull
 	QuickHull3D blueHull = new QuickHull3D();
 	Point3d[] bluePoints;
 	Point3d[] savedBluePoints;
@@ -52,15 +57,22 @@ public class UCubeV22 extends PApplet {
 
 	ToxiclibsSupport gfx;
 
+	//knots
+	QuickHull3D knotHull = new QuickHull3D(); // init quickhull for knot
 	Mesh3D knotMesh = new TriangleMesh(); // trianglemesh for knot
-	ArrayList<Vec3D> knotVectors = new ArrayList<Vec3D>(); // array list of
-															// vectors for knot
-															// making
+	ArrayList<Vec3D> knotVectors = new ArrayList<Vec3D>(); 
 	Vec3D[] kVectors = new Vec3D[0]; // collection of all knot vectors
 	Point3d[] knotPoints = new Point3d[0]; // knot points (cubes around each
 											// point)
 	Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
 	int offset = 10; // how thick your knot is
+	
+	//minimal spanning tree
+	QuickHull3D mstHull = new QuickHull3D(); // init quickhull for knot
+	ArrayList<Vec3D> mstVectors = new ArrayList<Vec3D>();
+	Mesh3D mstMesh = new TriangleMesh();
+	Point3d[] mstPoints = new Point3d[0];
+	Vec3D[] mVectors = new Vec3D[0];
 
 	Vec3D[] sVectors; // spline vectors
 	Vec2D[] mouseOverVectors; // for keeping track of mouseover
@@ -85,6 +97,7 @@ public class UCubeV22 extends PApplet {
 	boolean mouseOver = false;
 	boolean doHull = false;
 	boolean doKnot = false;
+	boolean doMst = false;
 	int vertexMouseOver = -1;
 	PFont myFont; // init font for text
 	PrintWriter output; // for saving shape
@@ -100,6 +113,12 @@ public class UCubeV22 extends PApplet {
 	int red = color(200, 0, 0);
 	int green = color(0, 200, 0);
 	int activeColor = grey;
+	
+	//spanning tree
+	int maximumVertices;
+	Graph g;
+	//ArrayList<Vec3D> vertices;
+	List<Edge> mst;
 
 	public void setup() {
 		// List all the available serial ports
@@ -243,16 +262,21 @@ public class UCubeV22 extends PApplet {
 
 									// println("vectors: " + vectors.length);
 
-									if (knotVectors
-											.contains(masterVectArray[counter])) { 
+									if (knotVectors.contains(masterVectArray[counter])) { 
 																					
 									} else {
-										knotVectors
-												.add(masterVectArray[counter]);
+										knotVectors.add(masterVectArray[counter]);
 										println(masterVectArray[counter]
 												+ " true");
 										reDrawKnot = true;
 									}
+									
+									if(mstVectors.contains(masterVectArray[counter])){
+										
+									} else {
+										mstVectors.add(masterVectArray[counter]);
+									}
+									
 								}
 								
 								if(bit == '0') {																		
@@ -266,6 +290,14 @@ public class UCubeV22 extends PApplet {
 										blueVectors.remove(masterVectArray[counter]);
 										initBluePoints();
 										//println("removed green");
+										
+										if (knotVectors.contains(masterVectArray[counter])) { 
+											knotVectors.remove(masterVectArray[counter]);
+										}
+										
+										if(mstVectors.contains(masterVectArray[counter])){
+											mstVectors.remove(masterVectArray[counter]);
+										}
 									
 									
 									
@@ -353,7 +385,26 @@ public class UCubeV22 extends PApplet {
 						}
 						endShape();
 					}
+					
+					if (doMst == true) {
+						// drawKnot();
+						strokeWeight(1);
+						fill(200);
+						beginShape(TRIANGLES);
 
+						for (int i1 = 0; i1 < mVectors.length; i1 += 3) {
+
+							// scale(.05);
+							// knotMesh.addFace(kVectors[i], kVectors[i+1],
+							// kVectors[i+2]);
+
+							vertex(mVectors[i1]);
+							vertex(mVectors[i1 + 1]);
+							vertex(mVectors[i1 + 2]);
+						}
+						endShape();
+					}
+					
 					// if we're in edit mode, enable rollover detection for
 					// vertices
 					if (readSerial == false) {
@@ -427,6 +478,9 @@ public class UCubeV22 extends PApplet {
 		controlP5.addButton("ExportKnot", 0, 100, 280, 80, 19);
 		controlP5.addButton("ClearKnot", 0, 100, 300, 80, 19);
 		controlP5.addButton("CloseKnot", 0, 100, 320, 80, 19);
+		controlP5.addButton("Tree", 0, 100, 360, 80, 19);
+		controlP5.addButton("ExportTree", 0, 100, 380, 80, 19);
+		controlP5.addButton("ClearTree", 0, 100, 400, 80, 19);
 
 		controlP5.addButton("GreenHull", 0, 200, 120, 80, 19);
 		controlP5.addButton("RedHull", 0, 200, 140, 80, 19);
@@ -442,7 +496,7 @@ public class UCubeV22 extends PApplet {
 		s.setColorLabel(50);
 		s.setLabel("knot width");
 
-		CheckBox checkbox = controlP5.addCheckBox("checkBox", 100, 400);
+		CheckBox checkbox = controlP5.addCheckBox("checkBox", 100, 420);
 		checkbox.setSize(20, 20);
 		checkbox.setItemsPerRow(1);
 		checkbox.setSpacingRow(2);
@@ -454,7 +508,6 @@ public class UCubeV22 extends PApplet {
 
 	public void controlEvent(ControlEvent theEvent) {
 		if (theEvent.isGroup()) {
-			// myColorBackground = 0;
 			// print("got an event from "+theEvent.group().name()+"\t");
 			// checkbox uses arrayValue to store the state of
 			// individual checkbox-items. usage:
@@ -465,11 +518,8 @@ public class UCubeV22 extends PApplet {
 					activeColor = grey;
 					println("grey");
 				}
-
 				
-
 				if (n == 1) {
-					// myColorBackground +=
 					// ((RadioButton)theEvent.group()).getItem(i).internalValue();
 					println(((RadioButton) theEvent.group()).getItem(i)
 							.internalValue());
@@ -484,10 +534,8 @@ public class UCubeV22 extends PApplet {
 						activeColor = green;
 						println("green");
 					}
-
 				}
 			}
-
 		}
 	}
 
@@ -549,6 +597,18 @@ public class UCubeV22 extends PApplet {
 		if (controlP5.controller("offset").isInside()) {
 			message = "Changes the thickness of the knot.";
 		}
+		
+		if (controlP5.controller("Tree").isInside()) {
+			message = "Makes a minimal spaninng tree.";
+		}
+		
+		if (controlP5.controller("ExportTree").isInside()) {
+			message = "Exports the STL of your tree.";
+		}
+		
+		if(controlP5.controller("ClearTree").isInside()) {
+			message = "Clears the points of the Tree.";
+		}
 
 		if (controlP5.controller("RedHull").isInside()) {
 			message = "Toggles the red convex hull (fill).";
@@ -568,7 +628,7 @@ public class UCubeV22 extends PApplet {
 
 		if (message != null && controlP5.window(this).isMouseOver()) {
 			textSize(14);
-			text(message, 100, 400, 0);
+			text(message, 100, 550, 0);
 		}
 	}
 
@@ -701,6 +761,27 @@ public class UCubeV22 extends PApplet {
 	public void CloseKnot(int theValue) {
 		closeKnot();
 	}
+	
+	public void Tree(int theValue) {
+		
+		if(doMst == true) {
+			doMst = false;
+		} else if (doMst == false) {
+			doMst = true;
+			drawMst();
+		}	
+	}
+	
+	public void ClearTree(int theValue){
+		
+		
+			mVectors = new Vec3D[0];
+			mstVectors.clear();
+			mstPoints = new Point3d[0];
+		
+		
+	}
+	
 
 	// enter edit mode
 	public void Edit(int theValue) {
@@ -765,6 +846,10 @@ public class UCubeV22 extends PApplet {
 	// export stl of knot
 	public void ExportKnot(int theValue) {
 		outputKnot();
+	}
+	
+	public void ExportTree(int theValue) {
+		outputMst();
 	}
 
 	public void ExportGreen(int theValue) {
@@ -855,6 +940,27 @@ public class UCubeV22 extends PApplet {
 		knotMesh.flipVertexOrder();
 		mySTL.addMesh(knotMesh);
 		mySTL.saveAsSTL(selectOutput());
+	}
+	
+	public void outputMst() {
+		
+		TriangleMesh mySTL = new TriangleMesh();
+
+		for (int i = 0; i < mVectors.length; i += 3) {
+
+			// scale(.05);
+			mstMesh.addFace(mVectors[i], mVectors[i + 1], mVectors[i + 2]);
+			println(mVectors[i] + " " + mVectors[i + 1] + " " + mVectors[i + 2]);
+		}
+
+		// knotMesh.faceOutwards();
+		// knotMesh.computeCentroid();
+		// knotMesh.computeFaceNormals();
+		// knotMesh.computeVertexNormals();
+		mstMesh.flipVertexOrder();
+		mySTL.addMesh(mstMesh);
+		mySTL.saveAsSTL(selectOutput());
+		
 	}
 
 	// save a text file of active points
@@ -1539,5 +1645,605 @@ public class UCubeV22 extends PApplet {
 			}
 		}
 	}
+	
+	//MINIMAL SPANNING TREE
+	
+	public void drawMst() {
+
+		// int offset = 10;
+		// int offset = spacing/2;
+		// lerpPoints();
+		// doCubes();
+
+		strokeWeight(1);
+		fill(200);
+		maximumVertices = mstVectors.size();
+		g = new Graph(maximumVertices);
+		
+		for(int i = 0; i < mstVectors.size(); i++) {
+			
+			g.addVertex(i, mstVectors.get(i).x, mstVectors.get(i).y, mstVectors.get(i).z);
+			
+		}
+		
+
+	    for(int j = 0; j < maximumVertices; j++) {
+	     for(int k = 0; k < maximumVertices; k++) {
+	      if(k != j) { 
+	      g.addEdge(j,k);
+	      }
+	      println(j + " " + k);
+	     } 
+	    }
+	    
+	    
+	    Kruskal k = new Kruskal(g);
+	    mst = k.getMSTEdges();
+	    
+//	    System.out.println ("Minimum Spanning Tree Edges are:");
+//	    java.util.ListIterator it = mst.listIterator();
+//	    while (it.hasNext ()) {
+//	      Edge e = (Edge)it.next();
+//	      System.out.println ("v" + e.getFrom().getVertexNo() + " --- v" + e.getTo().getVertexNo());
+//	    }
+
+	    
+	    for(int i = 0; i < mst.size(); i++) {
+	    	
+	    	println(i);
+	    	
+	    	Edge e = (Edge)mst.get(i);
+	    	
+	    	float x = (float)e.getFrom().getX();
+	    	float y = (float)e.getFrom().getY();
+	    	float z = (float)e.getFrom().getZ();
+	    	
+	    	float x2 = (float)e.getTo().getX();
+	    	float y2 = (float)e.getTo().getY();
+	    	float z2 = (float)e.getTo().getZ();
+	    	
+			mstPoints = new Point3d[0];
+
+			Point3d p1 = new Point3d(x + offset, y + offset, z + offset);
+			Point3d p2 = new Point3d(x + offset, y + offset, z - offset);
+			Point3d p3 = new Point3d(x + offset, y - offset, z + offset);
+			Point3d p4 = new Point3d(x - offset, y + offset, z + offset);
+
+			Point3d p5 = new Point3d(x - offset, y - offset, z + offset);
+			Point3d p6 = new Point3d(x - offset, y + offset, z - offset);
+			Point3d p7 = new Point3d(x + offset, y - offset, z - offset);
+			Point3d p8 = new Point3d(x - offset, y - offset, z - offset);
+
+			Point3d p9 = new Point3d(x2 + offset, y2 + offset, z2 + offset);
+			Point3d p10 = new Point3d(x2 + offset, y2 + offset, z2 - offset);
+			Point3d p11 = new Point3d(x2 + offset, y2 - offset, z2 + offset);
+			Point3d p12 = new Point3d(x2 - offset, y2 + offset, z2 + offset);
+
+			Point3d p13 = new Point3d(x2 - offset, y2 - offset, z2 + offset);
+			Point3d p14 = new Point3d(x2 - offset, y2 + offset, z2 - offset);
+			Point3d p15 = new Point3d(x2 + offset, y2 - offset, z2 - offset);
+			Point3d p16 = new Point3d(x2 - offset, y2 - offset, z2 - offset);
+
+			mstPoints = (Point3d[]) append(mstPoints, p1);
+			mstPoints = (Point3d[]) append(mstPoints, p2);
+			mstPoints = (Point3d[]) append(mstPoints, p3);
+			mstPoints = (Point3d[]) append(mstPoints, p4);
+
+			mstPoints = (Point3d[]) append(mstPoints, p5);
+			mstPoints = (Point3d[]) append(mstPoints, p6);
+			mstPoints = (Point3d[]) append(mstPoints, p7);
+			mstPoints = (Point3d[]) append(mstPoints, p8);
+
+			mstPoints = (Point3d[]) append(mstPoints, p9);
+			mstPoints = (Point3d[]) append(mstPoints, p10);
+			mstPoints = (Point3d[]) append(mstPoints, p11);
+			mstPoints = (Point3d[]) append(mstPoints, p12);
+
+			mstPoints = (Point3d[]) append(mstPoints, p13);
+			mstPoints = (Point3d[]) append(mstPoints, p14);
+			mstPoints = (Point3d[]) append(mstPoints, p15);
+			mstPoints = (Point3d[]) append(mstPoints, p16);
+
+			doMstHull(mstPoints);
+	    	
+	    }
+	    
+	    
+	    
+//		for (int i = 0; i < mstVectors.size() - 1; i++) {
+//
+//			Vec3D vec = mstVectors.get(i);
+//			float x = (float) vec.x;
+//			float y = (float) vec.y;
+//			float z = (float) vec.z;
+//
+//			Vec3D vec2 = mstVectors.get(i + 1);
+//			float x2 = (float) vec2.x;
+//			float y2 = (float) vec2.y;
+//			float z2 = (float) vec2.z;
+//
+//			line(x, y, z, x2, y2, z2);
+//
+//		}
+//
+//		for (int i = 0; i < mstVectors.size() - 1; i++) {
+//
+//			Vec3D vec = mstVectors.get(i);
+//			float x = (float) vec.x;
+//			float y = (float) vec.y;
+//			float z = (float) vec.z;
+//
+//			Vec3D vec2 = mstVectors.get(i + 1);
+//			float x2 = (float) vec2.x;
+//			float y2 = (float) vec2.y;
+//			float z2 = (float) vec2.z;
+//
+//			mstPoints = new Point3d[0];
+//
+//			Point3d p1 = new Point3d(x + offset, y + offset, z + offset);
+//			Point3d p2 = new Point3d(x + offset, y + offset, z - offset);
+//			Point3d p3 = new Point3d(x + offset, y - offset, z + offset);
+//			Point3d p4 = new Point3d(x - offset, y + offset, z + offset);
+//
+//			Point3d p5 = new Point3d(x - offset, y - offset, z + offset);
+//			Point3d p6 = new Point3d(x - offset, y + offset, z - offset);
+//			Point3d p7 = new Point3d(x + offset, y - offset, z - offset);
+//			Point3d p8 = new Point3d(x - offset, y - offset, z - offset);
+//
+//			Point3d p9 = new Point3d(x2 + offset, y2 + offset, z2 + offset);
+//			Point3d p10 = new Point3d(x2 + offset, y2 + offset, z2 - offset);
+//			Point3d p11 = new Point3d(x2 + offset, y2 - offset, z2 + offset);
+//			Point3d p12 = new Point3d(x2 - offset, y2 + offset, z2 + offset);
+//
+//			Point3d p13 = new Point3d(x2 - offset, y2 - offset, z2 + offset);
+//			Point3d p14 = new Point3d(x2 - offset, y2 + offset, z2 - offset);
+//			Point3d p15 = new Point3d(x2 + offset, y2 - offset, z2 - offset);
+//			Point3d p16 = new Point3d(x2 - offset, y2 - offset, z2 - offset);
+//
+//			mstPoints = (Point3d[]) append(mstPoints, p1);
+//			mstPoints = (Point3d[]) append(mstPoints, p2);
+//			mstPoints = (Point3d[]) append(mstPoints, p3);
+//			mstPoints = (Point3d[]) append(knotPoints, p4);
+//
+//			mstPoints = (Point3d[]) append(mstPoints, p5);
+//			mstPoints = (Point3d[]) append(mstPoints, p6);
+//			mstPoints = (Point3d[]) append(mstPoints, p7);
+//			mstPoints = (Point3d[]) append(mstPoints, p8);
+//
+//			mstPoints = (Point3d[]) append(mstPoints, p9);
+//			mstPoints = (Point3d[]) append(mstPoints, p10);
+//			mstPoints = (Point3d[]) append(mstPoints, p11);
+//			mstPoints = (Point3d[]) append(mstPoints, p12);
+//
+//			mstPoints = (Point3d[]) append(mstPoints, p13);
+//			mstPoints = (Point3d[]) append(mstPoints, p14);
+//			mstPoints = (Point3d[]) append(mstPoints, p15);
+//			mstPoints = (Point3d[]) append(mstPoints, p16);
+//
+//			doMstHull(mstPoints);
+//		}
+	}
+	
+	public void doMstHull(Point3d[] mstPoints) {
+
+		int numPoints = mstPoints.length;
+		// kVectors = new Vec3D[0];
+
+		if (mstHull.myCheck(mstPoints, numPoints) == false) {
+		} else if (mstHull.myCheck(mstPoints, numPoints) == true) {
+
+			mstHull.build(mstPoints);
+			mstHull.triangulate();
+			// get an array of the vertices so we can get the faces
+			Point3d[] vertices = mstHull.getVertices();
+
+			fill(200);
+			if (doFill == false) {
+				noFill();
+			}
+			int[][] faceIndices = mstHull.getFaces();
+			for (int i = 0; i < faceIndices.length; i++) {
+
+				for (int k = 0; k < faceIndices[i].length; k++) {
+
+					// get points that correspond to each face
+					Point3d pnt2 = vertices[faceIndices[i][k]];
+					float x = (float) pnt2.x;
+					float y = (float) pnt2.y;
+					float z = (float) pnt2.z;
+					// vertex(x, y, z);
+					Vec3D tempVect = new Vec3D(x, y, z);
+					// println(x + "," + y + "," + z + " " + k);
+					//kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
+					mVectors = (Vec3D[]) append(mVectors, tempVect);
+
+					// println(x + "," + y + "," + z);
+				}
+			}
+			// endShape(CLOSE);
+			//reDrawKnot = false;
+			//println("false");
+		}
+	}
+	
+	
+	
+//	public void clearMst() {
+//		mVectors = new Vec3D[0];
+//		mstVectors.clear();
+//		mstPoints = new Point3d[0];
+//	}
+	
+	
+	
+	
+	public class Kruskal {
+
+		  private Graph graph;
+		  private int[] sets; //represent set for vertices
+
+		    public Kruskal(Graph g) {
+		    this.graph = g;
+		    this.sets = new int[g.getTotalNumberOfVertices()];
+		  }
+
+		  private void makeSet(Vertex v) {
+		    this.sets[v.getVertexNo()] = v.getVertexNo(); //simply set the set name to each vertex no
+		  }
+
+		  private int findSet(Vertex v) {
+		    return this.sets[v.getVertexNo()]; //gets the set name/number of a vertex
+		  }
+
+		  private void union(Vertex u, Vertex v) {
+		    int findWhat, replaceWith;
+
+		    if (u.getVertexNo() < v.getVertexNo()) {
+		      findWhat = this.sets[v.getVertexNo()];
+		      replaceWith = this.sets[u.getVertexNo()];
+		    }
+		    else {
+		      findWhat = this.sets[u.getVertexNo()];
+		      replaceWith = this.sets[v.getVertexNo()];
+		    }
+
+		    //make both sets same
+		    for (int i=0; i<this.sets.length; i++) {
+		      if (this.sets[i] == findWhat) {
+		        this.sets[i] = replaceWith;
+		      }
+		    }
+		  }
+
+		  private void sortEdges(Edge[] edges) {
+		    for (int i=0; i<edges.length-1; i++) {
+		      for (int j=i+1; j<edges.length; j++) {
+		        if (edges[i].getWeight() > edges[j].getWeight()) {
+		          Edge tmp = edges[i];
+		          edges[i] = edges[j];
+		          edges[j] = tmp;
+		        }
+		      }
+		    }
+		  }
+
+		  //runs the main kruskal algorithm
+		  public List<Edge> getMSTEdges() {
+		    //holds the MST edges
+		    List<Edge> mstEdges = new ArrayList<Edge>();
+
+		    Vertex[] vertices = this.graph.getVertices();
+		    for (int i=0; i<vertices.length; i++) {
+		      this.makeSet(vertices[i]);
+		    }
+
+		    //get all bi-directional edges
+		    Edge[] edges = this.graph.getAllBidirectionalEdges();
+		    //sort the edges w.r.t their weights in non-decreasing order
+		    this.sortEdges(edges);
+
+		    for (int i=0; i<edges.length; i++) {
+		      //for each each, in sorted order
+		      Edge e = edges[i];    		
+		      if (this.findSet(e.getFrom()) != this.findSet(e.getTo())) {
+		        //if the vertices it connects are not in the same set
+		        //this edge is an MST edge
+		        mstEdges.add(e);
+		        //now, both vertices should have same set
+		        this.union(e.getFrom(), e.getTo());
+		      }
+		    }
+
+		    return mstEdges;
+		  }
+		}
+
+	
+	
+	//edge class is needed for Kruskal's algorithm
+	class Edge {
+	  private Vertex fromVertex=null, toVertex=null;
+	  private float weight;
+	  
+	  
+	  public Edge(Vertex from, Vertex to, float weight) {
+	    this.fromVertex = from;
+	    this.toVertex = to;
+	    //this.weight = weight;
+	    this.weight = dist(fromVertex.x,fromVertex.y,fromVertex.z,toVertex.x,toVertex.y,toVertex.z);
+	  }
+
+	  public Vertex getFrom() {
+	    return this.fromVertex;
+	  }
+	  public Vertex getTo() {
+	    return this.toVertex;
+	  }
+	  public float getWeight() {
+	    return this.weight;
+	  }
+	  
+	 
+	  
+	}
+	
+	
+	class Graph {
+		  private final int DEFAULT_EDGE_COST = 1;
+		  private Vertex[] vertices = null; //list of all vertices in the graph
+		  private int totalVertices = 0; //keeps count of vertices
+		  private int[][] adjMatrix = null; //keeps the edges of the graph using adjacency matrix
+		  private int[] adjacentVertCount = null; //keeps count of adjacent vertices for each vertex
+
+		  public Graph(int maxVertices) {
+		    this.vertices = new Vertex[maxVertices]; //initialize vertices array
+		    this.adjMatrix = new int[maxVertices][maxVertices]; //initialize adjacency matrix
+		    this.adjacentVertCount = new int[maxVertices]; //initialize adjacent vertices count
+		    for (int i=0; i<maxVertices; i++) {
+		      this.adjacentVertCount[i] = 0; //set adjacent vertex count to 0 initially
+		      for (int j=0; j<maxVertices; j++) {
+		        this.adjMatrix[i][j] = -1; //set adjacency list to -1 initially
+		      }
+		    }
+		  }
+
+		  public Graph() {
+		    //default Max amount of vertices: 100 [0-99]
+		    this(100);
+		  }
+
+		//  //add a new vertex with vertexNo and data
+		//  public void addVertex(int vertexNo, Object data) {
+//		    this.vertices[vertexNo] = new Vertex(vertexNo, data);
+//		    this.totalVertices++;
+		//  }
+
+		//  //add a new vertex with vertexNo only
+		//  public void addVertex(int vertexNo) {
+//		    this.addVertex(vertexNo, null);
+		//  }
+		  
+		  //MINE
+		  public void addVertex(int vertexNo, float x, float y, float z) {
+		   this.vertices[vertexNo] = new Vertex(vertexNo,x,y,z);
+		   this.totalVertices++; 
+		  }
+
+		  //add a uni-directional edge with cost
+		  public void addEdge(int fromVertexNo, int toVertexNo, int cost) {
+		    this.adjMatrix[fromVertexNo][toVertexNo] = cost;
+		    this.adjacentVertCount[fromVertexNo]++;
+		  }
+
+		  //add a uni-directional edge with cost
+		  public void addEdge(Vertex fromVertex, Vertex toVertex, int cost) {
+		    this.addEdge(fromVertex.getVertexNo(), toVertex.getVertexNo(), cost);
+		  }
+
+		  //add a uni-directional edge
+		  public void addEdge(int fromVertexNo, int toVertexNo) {
+		    this.addEdge(fromVertexNo, toVertexNo, this.DEFAULT_EDGE_COST);
+		  }
+
+		  //add a uni-directional edge
+		  public void addEdge(Vertex fromVertex, Vertex toVertex) {
+		    this.addEdge(fromVertex.getVertexNo(), toVertex.getVertexNo());
+		  }
+
+		  //add a bi-directional edge with cost
+		  public void addBidirectionalEdge(int vertex1, int vertex2, int cost) {
+		    this.addEdge(vertex1, vertex2, cost);
+		    this.addEdge(vertex2, vertex1, cost);
+		  }
+
+		  //add a bi-directional edge with cost
+		  public void addBidirectionalEdge(Vertex v1, Vertex v2, int cost) {
+		    this.addBidirectionalEdge(v1.getVertexNo(), v2.getVertexNo(), cost);
+		  }
+
+		  //add a bi-directional edge
+		  public void addBidirectionalEdge(int vertex1, int vertex2) {
+		    this.addBidirectionalEdge(vertex1, vertex2, this.DEFAULT_EDGE_COST);
+		  }
+
+		  //add a bi-directional edge
+		  public void addBidirectionalEdge(Vertex v1, Vertex v2) {
+		    this.addBidirectionalEdge(v1.getVertexNo(), v2.getVertexNo());
+		  }
+
+		  //get the total vertices count in the graph
+		  public int getTotalNumberOfVertices() {
+		    return this.totalVertices;
+		  }
+
+		  ///mark a vertex as visited
+		  public void visitVertex(int vertexNo) {
+		    this.vertices[vertexNo].visit();
+		  }
+
+		  //gets if a vertex is visited
+		  public boolean isVisited(int vertexNo) {
+		    return this.vertices[vertexNo].isVisited();
+		  }
+
+		  //get a vertex from a vertexNo
+		  public Vertex getVertex(int vertexNo) {
+		    return this.vertices[vertexNo];
+		  }
+
+		  //gets a vertex data from vertexNo
+		  public Object getVertexData(int vertexNo) {
+		    return this.vertices[vertexNo].getData();
+		  }
+
+		  //get adjacent vertex numbers for a given vertexNo
+		  public int[] getAdjacentVertexNumbers(int vertexNo) {
+		    int[] ret = new int[this.adjacentVertCount[vertexNo]];
+		    int index = 0;
+
+		    for (int i=0; i<this.adjMatrix[vertexNo].length; i++) {
+		      if (this.adjMatrix[vertexNo][i] >= 0) {
+		        ret[index++] = i;
+		      }
+		    }
+
+		    return ret;
+		  }
+
+		  //get adjacent vertex numbers for a given vertex
+		  public int[] getAdjacentVertexNumbers(Vertex vert) {
+		    return this.getAdjacentVertexNumbers(vert.getVertexNo());
+		  }
+
+		  //get adjacent vertices for a given vertexNo
+		  public Vertex[] getAdjacentVertices(int vertexNo) {
+		    Vertex[] ret = new Vertex[this.adjacentVertCount[vertexNo]];
+		    int index = 0;
+
+		    for (int i=0; i<this.adjMatrix[vertexNo].length; i++) {
+		      if (this.adjMatrix[vertexNo][i] >= 0) {
+		        ret[index++] = this.vertices[i];
+		      }
+		    }
+
+		    return ret;
+		  }
+
+		  //get adjacent vertices for a given vertex
+		  public Vertex[] getAdjacentVertices(Vertex vert) {
+		    return this.getAdjacentVertices(vert.getVertexNo());
+		  }
+
+		  //gets the edge/path cost from adjacency list for two given vertexNo
+		  public int getEdgeCost(int fromVertNo, int toVertNo) {
+		    return this.adjMatrix[fromVertNo][toVertNo];
+		  }
+
+		  //gets the edge/path cost from adjacency list for two given vertices
+		  public int getEdgeCost(Vertex fromVert, Vertex toVert) {
+		    return this.getEdgeCost(fromVert.getVertexNo(), toVert.getVertexNo());
+		  }
+
+		  //gets all vertices
+		  public Vertex[] getVertices() {
+		    return this.vertices;
+		  }
+
+		  //returns all the edges of the graph
+		  //needed for edge traversing algorithms
+		  public Edge[] getAllEdges() {
+		    int totalEdges = 0;
+		    for (int i=0; i<this.adjacentVertCount.length; i++) {
+		      totalEdges += this.adjacentVertCount[i];
+		      
+		    }
+
+		    Edge[] edges = new Edge[totalEdges];
+		    int index = 0;
+		    for (int i=0; i<this.vertices.length; i++) {
+		      for (int j=0; j<this.vertices.length; j++) {
+		        if (this.adjMatrix[i][j] >= 0) {
+		          edges[index++] = new Edge(this.vertices[i], this.vertices[j], this.adjMatrix[i][j]);
+		          
+		        }
+		      }
+		    }
+
+		    return edges;
+		  }
+
+		  public Edge[] getAllBidirectionalEdges() {
+		    int totalEdges = 0;
+		    for (int i=0; i<this.adjacentVertCount.length; i++) {
+		      totalEdges += this.adjacentVertCount[i];
+		    }
+		    totalEdges /= 2;
+
+		    Edge[] edges = new Edge[totalEdges];
+		    int index = 0;
+		    for (int i=0; i<this.vertices.length; i++) {
+		      for (int j=i+1; j<this.vertices.length; j++) {
+		        if (this.adjMatrix[i][j] >= 0) {
+		          edges[index++] = new Edge(this.vertices[i], this.vertices[j], this.adjMatrix[i][j]);
+		        }
+		      }
+		    }
+
+		    return edges;
+		  }
+		}
+	
+	
+	
+	class Vertex {
+		  private int vertexNo; //vertex number, starting from 0
+		  private boolean visited;
+		  private Object data = null; //can store any data associate with this vertes
+		  private float x,y,z;
+
+		  //public Vertex(int vertexNo, Object data) {
+		    public Vertex(int vertexNo, float x, float y, float z) {
+		    this.vertexNo = vertexNo;
+		    this.visited = false;
+		    this.data = data;
+		    
+		    this.x = x;
+		    this.y = y;
+		    this.z = z;
+		  }
+		//  public Vertex(int vertexNo) {
+//		    this(vertexNo, null);
+		//  }
+
+		  public void visit() {
+		    this.visited = true;
+		  }
+		  public boolean isVisited() {
+		    return this.visited;
+		  }
+		  public int getVertexNo() {
+		    return this.vertexNo;
+		  }
+		  public Object getData() {
+		    return this.data;
+		  }
+		  
+		  public float getX() {
+		    return this.x;
+		  }
+		  
+		  public float getY() {
+		    return this.y;
+		  }
+		  
+		  public float getZ() {
+		    return this.z;
+		  }
+
+		  
+		}
+	
+	
+	
 
 } // end class
