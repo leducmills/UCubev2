@@ -39,12 +39,12 @@ public class Nav3D {
 	// Function for detecting if mouse is over an active vertex
 		public void hitDetection() {
 
-			for (int i = 0; i < u.vectors.length; i++) {
+			for (int i = 0; i < u.vectors.size(); i++) {
 
-				x = p.screenX((float) u.vectors[i].x, (float) u.vectors[i].y,
-						(float) u.vectors[i].z);
-				y = p.screenY((float) u.vectors[i].x, (float) u.vectors[i].y,
-						(float) u.vectors[i].z);
+				x = p.screenX((float) u.vectors.get(i).x, (float) u.vectors.get(i).y,
+						(float) u.vectors.get(i).z);
+				y = p.screenY((float) u.vectors.get(i).x, (float) u.vectors.get(i).y,
+						(float) u.vectors.get(i).z);
 				// println(x + " " + y);
 				Vec2D v2d = new Vec2D(x, y);
 
@@ -66,11 +66,11 @@ public class Nav3D {
 			p.println("mouseOver: " + mouseOver);
 			p.println(mouseOverVectors[vertexMouseOver]);
 
-			u.vectors[vertexMouseOver].x = p.mouseX - p.width / 2;
-			u.vectors[vertexMouseOver].y = p.mouseY - p.height / 2;
+			u.vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
+			u.vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
 
 			//u.reDraw = true;
-			u.drawHull();
+			//u.drawHull();
 		}
 
 		else if (mouseOver == false) {
