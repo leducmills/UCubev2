@@ -55,6 +55,5 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/Users/ben/Documents/Processing/libraries/toxiclibs-complete-0020/toxiclibscore/library/toxiclibscore.jar"/>
 	<classpathentry kind="lib" path="/Users/ben/Documents/Processing/libraries/toxiclibs-complete-0020/toxiclibs_p5/library/toxiclibs_p5.jar"/>
-	<classpathentry kind="lib" path="/Users/ben/Documents/workspace/UCube_v2_2/lib/base/serial/RXTXcomm.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

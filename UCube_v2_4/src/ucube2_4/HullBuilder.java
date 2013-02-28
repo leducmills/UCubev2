@@ -1,4 +1,4 @@
-package ucubev23;
+package ucube2_4;
 
 import java.util.ArrayList;
 
@@ -99,7 +99,7 @@ public class HullBuilder {
 			}
 
 			else if (reDraw == false) {
-				p.print(reDraw);
+				PApplet.print(reDraw);
 //				beginShape(TRIANGLE_STRIP);
 //				strokeWeight(1);
 //				fill(200);

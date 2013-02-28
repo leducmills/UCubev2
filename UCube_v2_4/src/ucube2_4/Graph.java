@@ -1,4 +1,4 @@
-package ucubev23;
+package ucube2_4;
 
 
 class Graph {

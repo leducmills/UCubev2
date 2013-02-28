@@ -1,4 +1,4 @@
-package ucubev23;
+package ucube2_4;
 
 import processing.core.PApplet;
 
@@ -12,7 +12,7 @@ class Edge {
 		this.fromVertex = from;
 		this.toVertex = to;
 		// this.weight = weight;
-		this.weight = p.dist(fromVertex.getX(), fromVertex.getY(), fromVertex.getZ(),
+		this.weight = PApplet.dist(fromVertex.getX(), fromVertex.getY(), fromVertex.getZ(),
 				toVertex.getX(), toVertex.getY(), toVertex.getZ());
 	}
 

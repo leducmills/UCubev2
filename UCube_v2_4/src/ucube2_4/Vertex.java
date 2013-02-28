@@ -1,4 +1,4 @@
-package ucubev23;
+package ucube2_4;
 
 class Vertex {
 	private int vertexNo; // vertex number, starting from 0
