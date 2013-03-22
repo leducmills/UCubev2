@@ -2,6 +2,8 @@ package ucube2_4;
 
 import java.util.ArrayList;
 
+import newhull.Point3d;
+
 import processing.core.PApplet;
 import processing.core.PConstants;
 import toxi.geom.Vec2D;
@@ -41,25 +43,25 @@ public class Nav3D {
 	
 	
 	// Function for detecting if mouse is over an active vertex
-		public void hitDetection() {
-
-			for (int i = 0; i < u.vectors.size(); i++) {
-
-				x = p.screenX(u.vectors.get(i).x, u.vectors.get(i).y,
-						u.vectors.get(i).z);
-				y = p.screenY(u.vectors.get(i).x, u.vectors.get(i).y,
-						u.vectors.get(i).z);
-				p.println(x + " " + y);
-				Vec2D v2d = new Vec2D(x, y);
-
-				mouseOverVectors = (Vec2D[]) PApplet.append(mouseOverVectors, v2d);
-
-				if (x > p.mouseX - 3 && x < p.mouseX + 3 && y > p.mouseY - 3
-						&& y < p.mouseY + 3) {
-					vertexMouseOver = i;
-				}
-			}
-		}
+//		public void hitDetection() {
+//
+//			for (int i = 0; i < u.vectors.size(); i++) {
+//
+//				x = p.screenX(u.vectors.get(i).x, u.vectors.get(i).y,
+//						u.vectors.get(i).z);
+//				y = p.screenY(u.vectors.get(i).x, u.vectors.get(i).y,
+//						u.vectors.get(i).z);
+//				p.println(x + " " + y);
+//				Vec2D v2d = new Vec2D(x, y);
+//
+//				mouseOverVectors = (Vec2D[]) PApplet.append(mouseOverVectors, v2d);
+//
+//				if (x > p.mouseX - 3 && x < p.mouseX + 3 && y > p.mouseY - 3
+//						&& y < p.mouseY + 3) {
+//					vertexMouseOver = i;
+//				}
+//			}
+//		}
 	
 		
 		public void hitDetection(ArrayList<Vec3D> vectors) {
@@ -78,9 +80,10 @@ public class Nav3D {
 				if (x > p.mouseX - 3 && x < p.mouseX + 3 && y > p.mouseY - 3
 						&& y < p.mouseY + 3) {
 					vertexMouseOver = i;
-					p.ellipseMode(PApplet.CENTER);
-					//p.ellipse(x,y,55,55);
-					PApplet.println("hit");
+					
+					PApplet.println("hit" + x + " " + y);
+					//p.ellipse(p.screenX(vectors.get(vertexMouseOver).x, vectors.get(vertexMouseOver).y), p.screenY(vectors.get(vertexMouseOver).x, vectors.get(vertexMouseOver).y), 50, 50);
+
 				}
 			}
 		
@@ -93,9 +96,10 @@ public class Nav3D {
 
 			PApplet.println("mouseOver: " + mouseOver);
 			PApplet.println(mouseOverVectors[vertexMouseOver]);
+			
 
-			u.vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
-			u.vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
+			//u.vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
+			//u.vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
 
 			//u.reDraw = true;
 			//u.drawHull();
@@ -116,7 +120,7 @@ public class Nav3D {
 		}
 	}
 	
-	public void mouseDragged(ArrayList<Vec3D> vectors) {
+	public void mouseDragged(ArrayList<Vec3D> vectors, Point3d[] points, int activeColor) {
 		// TODO Auto-generated method stub
 		// if edit mode is on, and the mouse is over a point, do stuff
 				if (mouseOver == true && vertexMouseOver != -1) {
@@ -124,10 +128,22 @@ public class Nav3D {
 					PApplet.println("mouseOver: " + mouseOver);
 					PApplet.println(mouseOverVectors[vertexMouseOver]);
 
-					vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
-					vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
-
+					//vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
+					//vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
+					
+					
+//					vectors.get(vertexMouseOver).x = (p.mouseX - (p.width/2))/2;
+//					vectors.get(vertexMouseOver).y = (p.mouseY - (p.height/2))/2;
+					
+					//vectors.get(vertexMouseOver).x += p.mouseX;
+					//vectors.get(vertexMouseOver).y += p.mouseY;
+					
+					vectors.get(vertexMouseOver).x += PApplet.radians(p.mouseX - p.pmouseX) * 40; 
+					vectors.get(vertexMouseOver).y += PApplet.radians(p.mouseY - p.pmouseY) * 40;
+					
+					
 					//u.reDraw = true;
+					//u.drawHull(vectors, points, activeColor);
 					//u.drawHull();
 				}
 
@@ -191,6 +207,8 @@ public class Nav3D {
 			}
 		}
 	}
+
+
 
 
 

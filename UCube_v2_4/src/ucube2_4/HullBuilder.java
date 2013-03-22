@@ -66,6 +66,8 @@ public class HullBuilder {
 				Point3d[] vertices = hull.getVertices();
 				//savedPoints = new Point3d[0];
 				vectors.clear();
+				stlVectors.clear();
+				//PApplet.println("stl clear");
 
 //				p.beginShape(p.TRIANGLE_STRIP);
 //				p.strokeWeight(1);
@@ -99,7 +101,7 @@ public class HullBuilder {
 			}
 
 			else if (reDraw == false) {
-				PApplet.print(reDraw);
+				//PApplet.print(reDraw);
 //				beginShape(TRIANGLE_STRIP);
 //				strokeWeight(1);
 //				fill(200);

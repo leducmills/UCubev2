@@ -70,6 +70,7 @@ public class UCubeV24 extends PApplet {
 											// point)
 	Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
 
+	//TO DO: only drawing max width, can't make it skinnier
 	int offset = 10; // how thick your knot is
 
 	// minimal spanning tree
@@ -80,16 +81,7 @@ public class UCubeV24 extends PApplet {
 	Vec3D[] mVectors = new Vec3D[0];
 
 	Vec3D[] sVectors; // spline vectors
-
-	// TODO: Edit mode
-//	Vec2D[] mouseOverVectors; // for keeping track of mouseover
-//	int vertexMouseOver = -1;
-//	boolean mouseOver = false;
-//	float x, y; // for hit detection screenX and screenY positions
-//	float rotX, rotY; // for manual rotation
 	boolean readSerial = true;
-	
-	
 
 	Serial myPort; // the serial port
 	boolean firstContact = false; // Whether we've heard from the
@@ -115,7 +107,6 @@ public class UCubeV24 extends PApplet {
 	PrintWriter output; // for saving shape
 	BufferedReader reader; // for loading shapes
 
-	
 	// String inString;
 
 	Vec3D[] masterVectArray = new Vec3D[0];
@@ -177,7 +168,7 @@ public class UCubeV24 extends PApplet {
 			drawSpline(); // do splines
 		}
 
-		drawAxes(); // draw axes
+		//drawAxes(); // draw axes
 
 		while (myPort.available() > 0) {
 
@@ -209,22 +200,16 @@ public class UCubeV24 extends PApplet {
 					// compare inString to oldString to see if coords changed
 					if (inString.equals(oldString)) {
 						// do nothing
+						// println(inString);
 					} else {
 						// if we're not in edit mode, update the input
 						// coordinates and redraw the hull
 						if (readSerial == true) {
 							oldString = inString;
-							println(inString);
-							reDraw = true;
+							// println(inString);
+							// reDraw = true;
 						}
 
-						// I dont think this works right
-						// if we are in edit mode, freeze the set of coordinates
-						// so we can edit
-						if (readSerial == false) {
-							inString = oldString;
-							//println(inString);
-						}
 
 						int counter = 0;
 						// vectors = new Vec3D[0];
@@ -352,17 +337,7 @@ public class UCubeV24 extends PApplet {
 							}
 						}
 					}
-					// if (vectors.length > 0) {
-					// stroke(grey);
-					// // put points on the canvas
-					// for (int j = 0; j < vectors.length; j++) {
-					// // println(vectors[j]);
-					// float x = vectors[j].x;
-					// float y = vectors[j].y;
-					// float z = vectors[j].z;
-					// point(x, y, z);
-					// }
-					// }
+
 					if (vectors.size() > 0) {
 						stroke(grey);
 						if (doFill) {
@@ -412,8 +387,10 @@ public class UCubeV24 extends PApplet {
 					}
 
 					// call drawHull function if Hull mode is active
+					// need to change point array for edit mode to work?
 					if (doHull == true) {
 						drawHull(vectors, points, grey);
+
 					}
 
 					if (doRedHull == true) {
@@ -426,7 +403,10 @@ public class UCubeV24 extends PApplet {
 
 					// draw knot if doKnot boolean == true
 					if (doKnot == true) {
+
 						if (reDrawKnot == true) {
+							println("redrawknot");
+
 							drawKnot();
 						}
 						// stroke(grey);
@@ -469,17 +449,21 @@ public class UCubeV24 extends PApplet {
 						endShape();
 					}
 
-					//TODO: Edit mode
+					// TODO: Edit mode
 					// if we're in edit mode, enable rollover detection for
 					// vertices
 					if (readSerial == false) {
 						nav.hitDetection(vectors);
+						nav.hitDetection(redVectors);
+						nav.hitDetection(blueVectors);
+						//nav.hitDetection(knotVectors);
 						// hitDectection();
 					}
 				}
 			}
 		}
 
+		drawAxes();
 		popMatrix();
 
 		// turn off depth test so the controlP5 GUI draws correctly
@@ -489,7 +473,7 @@ public class UCubeV24 extends PApplet {
 		if (readSerial == false) {
 			// myPort.stop();
 			textSize(14);
-			text("Edit Mode On", 100, 375, 0);
+			text("Edit Mode On", 100, 575, 0);
 		}
 		// do text cues after popMatrix so it doesn't rotate
 		doMouseOvers(); // text cues on button rollover
@@ -534,31 +518,38 @@ public class UCubeV24 extends PApplet {
 
 		controlP5.addButton("Hull", 0, 100, 100, 80, 19);
 		controlP5.addButton("Export", 0, 100, 120, 80, 19);
+		
+		controlP5.addButton("Edit", 0, 100, 160, 80, 19);
+		controlP5.addButton("Reset", 0, 100, 180, 80, 19);
 
-		controlP5.addButton("WireFrame", 0, 100, 160, 80, 19);
-		controlP5.addButton("Grid", 0, 100, 180, 80, 19);
-		controlP5.addButton("Spline", 0, 100, 200, 80, 19);
-		controlP5.addButton("Edit", 0, 100, 220, 80, 19);
-		controlP5.addButton("Save", 0, 100, 240, 80, 19);
-		controlP5.addButton("Load", 0, 100, 260, 80, 19);
+		controlP5.addButton("WireFrame", 0, 100, 220, 80, 19);
+		controlP5.addButton("Grid", 0, 100, 240, 80, 19);
+		controlP5.addButton("Spline", 0, 100, 260, 80, 19);
+		
+		controlP5.addButton("Save", 0, 100, 300, 80, 19);
+		controlP5.addButton("Load", 0, 100, 320, 80, 19);
 
-		controlP5.addButton("Knot", 0, 100, 300, 80, 19);
-		controlP5.addButton("ExportKnot", 0, 100, 320, 80, 19);
-		controlP5.addButton("CloseKnot", 0, 100, 340, 80, 19);
-		controlP5.addButton("ClearKnot", 0, 100, 360, 80, 19);
+		controlP5.addButton("Knot", 0, 100, 360, 80, 19);
+		controlP5.addButton("ExportKnot", 0, 100, 380, 80, 19);
+		controlP5.addButton("CloseKnot", 0, 100, 400, 80, 19);
+		controlP5.addButton("ClearKnot", 0, 100, 420, 80, 19);
 
-		controlP5.addButton("Tree", 0, 100, 420, 80, 19);
-		controlP5.addButton("ExportTree", 0, 100, 440, 80, 19);
-		controlP5.addButton("ClearTree", 0, 100, 460, 80, 19);
+		controlP5.addButton("Tree", 0, 100, 460, 80, 19);
+		controlP5.addButton("ExportTree", 0, 100, 480, 80, 19);
+		controlP5.addButton("ClearTree", 0, 100, 500, 80, 19);
 
-		controlP5.addButton("GreenHull", 0, 200, 140, 80, 19);
-		controlP5.addButton("RedHull", 0, 200, 160, 80, 19);
-
-		controlP5.addButton("ExportGreen", 0, 200, 180, 80, 19);
-		controlP5.addButton("ExportRed", 0, 200, 200, 80, 19);
-
-		Slider s = controlP5.addSlider("offset", 5, 35, offset, 100, 380, 80,
+		Slider s = controlP5.addSlider("offset", 5, 35, offset, 100, 520, 80,
 				19);
+		
+		controlP5.addButton("GreenHull", 0, 200, 140, 80, 19);
+		controlP5.addButton("ExportGreen", 0, 200, 160, 80, 19);
+		
+		controlP5.addButton("RedHull", 0, 200, 180, 80, 19);
+		controlP5.addButton("ExportRed", 0, 200, 200, 80, 19);
+		
+		
+
+		
 
 		controlP5.Label label = s.captionLabel();
 		label.style().marginLeft = -140;
@@ -643,6 +634,10 @@ public class UCubeV24 extends PApplet {
 		if (controlP5.controller("Edit").isInside()) {
 			message = "Turns on edit mode, where you can click and drag points to alter the shape.";
 		}
+		
+		if (controlP5.controller("Reset").isInside()) {
+			message = "Resets edited points back to the default grid.";
+		}
 
 		if (controlP5.controller("Save").isInside()) {
 			message = "Save your shape to a text file that you can load later.";
@@ -702,10 +697,11 @@ public class UCubeV24 extends PApplet {
 
 		if (message != null && controlP5.window(this).isMouseOver()) {
 			textSize(14);
-			text(message, 100, 550, 0);
+			text(message, 100, 600, 0);
 		}
 	}
 
+	// TODO: make edit mode work
 	// pass mouse and key events to our Nav3D instance
 	@Override
 	public void mouseDragged() {
@@ -713,9 +709,45 @@ public class UCubeV24 extends PApplet {
 		if (controlP5.window(this).isMouseOver())
 			return;
 
-		nav.mouseDragged();
-		//nav.mouseDragged(vectors);
+		// nav.mouseDragged();
+		// nav.mouseDragged(vectors, points, activeColor);
+		if (nav.mouseOver == true && nav.vertexMouseOver != -1) {
+			// PApplet.println("mouseOver: " + nav.mouseOver);
+			// PApplet.println(vectors.get(nav.vertexMouseOver));
+
+			if (activeColor == grey) {
+				//ellipse(screenX(vectors.get(nav.vertexMouseOver).x/4, vectors.get(nav.vertexMouseOver).y), screenY(vectors.get(nav.vertexMouseOver).x, vectors.get(nav.vertexMouseOver).y), 50, 50);
+				editShape(vectors, points);
+				//editShape(knotVectors, knotPoints);
+			}
+
+			if (activeColor == red) {
+				editShape(redVectors, redPoints);
+			}
+			if (activeColor == green) {
+				editShape(blueVectors, bluePoints);
+			}
+			
+			
+			
+
+		} else {
+			nav.mouseDragged();
+		}
 	}
+
+	public void editShape(ArrayList<Vec3D> vectors, Point3d[] points) {
+
+		vectors.get(nav.vertexMouseOver).x += PApplet.radians(mouseX - pmouseX) * 40;
+		vectors.get(nav.vertexMouseOver).y += PApplet.radians(mouseY - pmouseY) * 40;
+
+		points[nav.vertexMouseOver].x += PApplet.radians(mouseX - pmouseX) * 40;
+		points[nav.vertexMouseOver].y += PApplet.radians(mouseY - pmouseY) * 40;
+		
+		//ellipse(vectors.get(nav.vertexMouseOver).x, vectors.get(nav.vertexMouseOver).y, 50, 50);
+		
+	}
+	
 
 	@Override
 	public void mouseReleased() {
@@ -819,6 +851,12 @@ public class UCubeV24 extends PApplet {
 			doGrid = true;
 		}
 	}
+	//TODO: is this the best way?
+	public void Reset(int theValue) {
+		masterVectArray = new Vec3D[0];
+		masterPointArray = new Point3d[0];
+		initCoordArray();
+	}
 
 	// toggle knot
 	public void Knot(int theValue) {
@@ -863,15 +901,19 @@ public class UCubeV24 extends PApplet {
 	}
 
 	// enter edit mode
-	//TODO: Edit mode
+	// TODO: Edit mode
 	public void Edit(int theValue) {
 
 		if (readSerial == true) {
 			readSerial = false;
 			nav.mouseOver = true;
 		} else if (readSerial == false) {
+			
+
+			
 			readSerial = true;
 			nav.mouseOver = false;
+			
 		}
 	}
 
@@ -919,8 +961,9 @@ public class UCubeV24 extends PApplet {
 
 	// export stl of convex hull
 	public void Export(int theValue) {
+		// hb.stlVectors.clear();
 		drawHull(vectors, points, grey);
-		outputSTL();
+		outputSTL(hb.stlVectors, mesh);
 	}
 
 	// export stl of knot
@@ -937,32 +980,43 @@ public class UCubeV24 extends PApplet {
 	public void ExportGreen(int theValue) {
 		// TODO: get STL vectors from HullBuilder class
 		// blueHull();
-		blueSTL();
+		// blueSTL();
+
+		drawHull(blueVectors, bluePoints, grey);
+		outputSTL(hb.stlVectors, blueMesh);
 	}
 
 	// export Red Hull
 	public void ExportRed(int theValue) {
 
 		// redHull();
-		redSTL();
+		// redSTL();
+		drawHull(redVectors, redPoints, grey);
+		outputSTL(hb.stlVectors, redMesh);
 	}
 
 	// use this for convex hulls
-	public void outputSTL(Vec3D[] vectors, TriangleMesh mesh) {
+	public void outputSTL(ArrayList<Vec3D> vectors, Mesh3D mesh) {
+
+		mesh.clear();
+
 		TriangleMesh mySTL = new TriangleMesh();
 
-		for (int i = 0; i < vectors.length; i += 3) {
+		for (int i = 0; i < vectors.size(); i += 3) {
 
-			mesh.addFace(vectors[i], vectors[i + 1], vectors[i + 2]);
+			mesh.addFace(vectors.get(i), vectors.get(i + 1), vectors.get(i + 2));
 			// println(vectors[i] + " " + vectors[i+1] + " " + vectors[i+2]);
 		}
 
+		mesh.flipYAxis();
 		mySTL.addMesh(mesh);
 		mySTL.saveAsSTL(selectOutput());
 	}
 
 	// Use this for knot and mst
 	public void outputPath(Vec3D[] vectors, TriangleMesh mesh) {
+
+		mesh.clear();
 		TriangleMesh mySTL = new TriangleMesh();
 
 		for (int i = 0; i < vectors.length; i += 3) {
@@ -971,55 +1025,12 @@ public class UCubeV24 extends PApplet {
 			// println(vectors[i] + " " + vectors[i+1] + " " + vectors[i+2]);
 		}
 
+		mesh.flipYAxis();
 		mesh.flipVertexOrder();
 		mySTL.addMesh(mesh);
 		mySTL.saveAsSTL(selectOutput());
 	}
 
-	// stl writer for convex hull
-	public void outputSTL() {
-
-		TriangleMesh mySTL = new TriangleMesh();
-
-		for (int i = 0; i < hb.stlVectors.size(); i += 3) {
-
-			mesh.addFace(hb.stlVectors.get(i), hb.stlVectors.get(i + 1),
-					hb.stlVectors.get(i + 2));
-
-		}
-
-		mySTL.addMesh(mesh);
-		mySTL.saveAsSTL(selectOutput());
-	}
-
-	// stl writer for green hull
-	public void blueSTL() {
-
-		TriangleMesh myBlueSTL = new TriangleMesh();
-
-		for (int i = 0; i < blueSTLVectors.size(); i += 3) {
-
-			blueMesh.addFace(blueSTLVectors.get(i), blueSTLVectors.get(i + 1),
-					blueSTLVectors.get(i + 2));
-
-		}
-
-		myBlueSTL.addMesh(blueMesh);
-		myBlueSTL.saveAsSTL(selectOutput());
-	}
-
-	public void redSTL() {
-
-		TriangleMesh myRedSTL = new TriangleMesh();
-
-		for (int i = 0; i < redSTLVectors.size(); i += 3) {
-			redMesh.addFace(redSTLVectors.get(i), redSTLVectors.get(i + 1),
-					redSTLVectors.get(i + 2));
-		}
-
-		myRedSTL.addMesh(redMesh);
-		myRedSTL.saveAsSTL(selectOutput());
-	}
 
 	// stl writer for knot
 	public void outputKnot() {
@@ -1032,6 +1043,7 @@ public class UCubeV24 extends PApplet {
 			println(kVectors[i] + " " + kVectors[i + 1] + " " + kVectors[i + 2]);
 		}
 
+		knotMesh.flipYAxis();
 		knotMesh.flipVertexOrder();
 		mySTL.addMesh(knotMesh);
 		mySTL.saveAsSTL(selectOutput());
@@ -1047,6 +1059,7 @@ public class UCubeV24 extends PApplet {
 			println(mVectors[i] + " " + mVectors[i + 1] + " " + mVectors[i + 2]);
 		}
 
+		mstMesh.flipYAxis();
 		mstMesh.flipVertexOrder();
 		mySTL.addMesh(mstMesh);
 		mySTL.saveAsSTL(selectOutput());
@@ -1164,6 +1177,7 @@ public class UCubeV24 extends PApplet {
 
 			doKnotHull(knotPoints);
 		}
+		
 	}
 
 	// close knot by taking last point and first point in array and adding that
@@ -1230,8 +1244,11 @@ public class UCubeV24 extends PApplet {
 
 	public void doKnotHull(Point3d[] knotPoints) {
 
+		
+		
 		int numPoints = knotPoints.length;
 		// kVectors = new Vec3D[0];
+		
 
 		if (knotHull.myCheck(knotPoints, numPoints) == false) {
 		} else if (knotHull.myCheck(knotPoints, numPoints) == true) {
@@ -1284,31 +1301,6 @@ public class UCubeV24 extends PApplet {
 		knotPoints = new Point3d[0];
 		knotMesh.clear();
 	}
-
-	// TODO: Make this work again
-	// --------------------------MOUSEOVER FUNCTIONS / EDIT
-	// MODE----------------------------------//
-
-	// // Function for detecting if mouse is over an active vertex
-	// public void hitDetection() {
-	//
-	// for (int i = 0; i < vectors.length; i++) {
-	//
-	// x = screenX((float) vectors[i].x, (float) vectors[i].y,
-	// (float) vectors[i].z);
-	// y = screenY((float) vectors[i].x, (float) vectors[i].y,
-	// (float) vectors[i].z);
-	// // println(x + " " + y);
-	// Vec2D v2d = new Vec2D(x, y);
-	//
-	// mouseOverVectors = (Vec2D[]) append(mouseOverVectors, v2d);
-	//
-	// if (x > mouseX - 3 && x < mouseX + 3 && y > mouseY - 3
-	// && y < mouseY + 3) {
-	// vertexMouseOver = i;
-	// }
-	// }
-	// }
 
 	// --------------------------NEWHULL: Convex Hull
 	// Functions----------------------------------//
@@ -1373,12 +1365,12 @@ public class UCubeV24 extends PApplet {
 		}
 	}
 
+	// TODO: make work with edit mode
 	public void drawHull(ArrayList<Vec3D> vectors, Point3d[] points, int color) {
 
 		initPoints(vectors, points);
 
 		hb.reDraw = true;
-		// TODO: draw from hullBuilder
 		hb.makeHull(points);
 
 		if (hb.hull.myCheck(points, points.length) == false) {
