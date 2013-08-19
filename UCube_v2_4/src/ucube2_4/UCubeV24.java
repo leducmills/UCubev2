@@ -50,7 +50,7 @@ public class UCubeV24 extends PApplet {
 	boolean doRedHull = false;
 	ArrayList<Vec3D> redVectors = new ArrayList<Vec3D>();
 
-	// blue / green hull
+	// blue hull
 	QuickHull3D blueHull = new QuickHull3D();
 	Point3d[] bluePoints;
 	Point3d[] savedBluePoints;
@@ -114,7 +114,7 @@ public class UCubeV24 extends PApplet {
 
 	int grey = color(100);
 	int red = color(200, 0, 0);
-	int green = color(0, 200, 0);
+	int blue = color(0, 0, 200);
 	int activeColor = grey;
 
 	// spanning tree
@@ -127,7 +127,7 @@ public class UCubeV24 extends PApplet {
 		// List all the available serial ports
 		// println(Serial.list());
 
-		size(1400, 800, OPENGL);
+		size(1440, 835, OPENGL);
 		// size(1400, 800);
 		frameRate(10);
 		gfx = new ToxiclibsSupport(this); // initialize ToxiclibsSupport
@@ -168,8 +168,6 @@ public class UCubeV24 extends PApplet {
 			drawSpline(); // do splines
 		}
 
-		//drawAxes(); // draw axes
-
 		while (myPort.available() > 0) {
 
 			String inString = myPort.readStringUntil('\n');
@@ -206,7 +204,7 @@ public class UCubeV24 extends PApplet {
 						// coordinates and redraw the hull
 						if (readSerial == true) {
 							oldString = inString;
-							// println(inString);
+							println(inString);
 							// reDraw = true;
 						}
 
@@ -258,7 +256,7 @@ public class UCubeV24 extends PApplet {
 
 									}
 
-									if (activeColor == green
+									if (activeColor == blue
 											&& !blueVectors
 													.contains(masterVectArray[counter])
 											&& !redVectors
@@ -371,7 +369,7 @@ public class UCubeV24 extends PApplet {
 					}
 
 					if (blueVectors.size() > 0) {
-						stroke(green);
+						stroke(blue);
 						if (doFill) {
 							// fill(200);
 						} else {
@@ -398,7 +396,7 @@ public class UCubeV24 extends PApplet {
 					}
 
 					if (doBlueHull == true) {
-						drawHull(blueVectors, bluePoints, green);
+						drawHull(blueVectors, bluePoints, blue);
 					}
 
 					// draw knot if doKnot boolean == true
@@ -538,11 +536,11 @@ public class UCubeV24 extends PApplet {
 		controlP5.addButton("ExportTree", 0, 100, 480, 80, 19);
 		controlP5.addButton("ClearTree", 0, 100, 500, 80, 19);
 
-		Slider s = controlP5.addSlider("offset", 5, 35, offset, 100, 520, 80,
+		Slider s = controlP5.addSlider("offset", 5, spacing/2, offset, 100, 520, 80,
 				19);
 		
-		controlP5.addButton("GreenHull", 0, 200, 140, 80, 19);
-		controlP5.addButton("ExportGreen", 0, 200, 160, 80, 19);
+		controlP5.addButton("BlueHull", 0, 200, 140, 80, 19);
+		controlP5.addButton("ExportBlue", 0, 200, 160, 80, 19);
 		
 		controlP5.addButton("RedHull", 0, 200, 180, 80, 19);
 		controlP5.addButton("ExportRed", 0, 200, 200, 80, 19);
@@ -561,7 +559,7 @@ public class UCubeV24 extends PApplet {
 		checkBox.setItemsPerRow(1);
 		checkBox.setSpacingRow(1);
 		checkBox.addItem("red", 1);
-		checkBox.addItem("green", 2);
+		checkBox.addItem("blue", 2);
 		checkBox.deactivateAll();
 
 	}
@@ -595,7 +593,7 @@ public class UCubeV24 extends PApplet {
 
 					// green
 					if (selected == 2) {
-						activeColor = green;
+						activeColor = blue;
 						// println("green");
 
 					}
@@ -683,16 +681,16 @@ public class UCubeV24 extends PApplet {
 			message = "Toggles the red convex hull (fill).";
 		}
 
-		if (controlP5.controller("GreenHull").isInside()) {
-			message = "Toggles the green convex hull (fill).";
+		if (controlP5.controller("BlueHull").isInside()) {
+			message = "Toggles the blue convex hull (fill).";
 		}
 
 		if (controlP5.controller("ExportRed").isInside()) {
 			message = "Exports the STL of the Red Hull.";
 		}
 
-		if (controlP5.controller("ExportGreen").isInside()) {
-			message = "Exports the STL of the Green Hull";
+		if (controlP5.controller("ExportBlue").isInside()) {
+			message = "Exports the STL of the Blue Hull";
 		}
 
 		if (message != null && controlP5.window(this).isMouseOver()) {
@@ -724,7 +722,7 @@ public class UCubeV24 extends PApplet {
 			if (activeColor == red) {
 				editShape(redVectors, redPoints);
 			}
-			if (activeColor == green) {
+			if (activeColor == blue) {
 				editShape(blueVectors, bluePoints);
 			}
 			
@@ -814,7 +812,7 @@ public class UCubeV24 extends PApplet {
 		}
 	}
 
-	public void GreenHull(int theValue) {
+	public void BlueHull(int theValue) {
 		if (doBlueHull == true) {
 			doBlueHull = false;
 		} else if (doBlueHull == false) {
@@ -855,6 +853,8 @@ public class UCubeV24 extends PApplet {
 	public void Reset(int theValue) {
 		masterVectArray = new Vec3D[0];
 		masterPointArray = new Point3d[0];
+		clearKnot();
+		clearTree();
 		initCoordArray();
 	}
 
@@ -894,10 +894,17 @@ public class UCubeV24 extends PApplet {
 	// clear MST
 	public void ClearTree(int theValue) {
 
+		clearTree();
+//		mVectors = new Vec3D[0];
+//		mstVectors.clear();
+//		mstPoints = new Point3d[0];
+
+	}
+	
+	public void clearTree() {
 		mVectors = new Vec3D[0];
 		mstVectors.clear();
 		mstPoints = new Point3d[0];
-
 	}
 
 	// enter edit mode
@@ -908,12 +915,8 @@ public class UCubeV24 extends PApplet {
 			readSerial = false;
 			nav.mouseOver = true;
 		} else if (readSerial == false) {
-			
-
-			
 			readSerial = true;
-			nav.mouseOver = false;
-			
+			nav.mouseOver = false;	
 		}
 	}
 
@@ -977,7 +980,7 @@ public class UCubeV24 extends PApplet {
 	}
 
 	// export Green Hull
-	public void ExportGreen(int theValue) {
+	public void ExportBlue(int theValue) {
 		// TODO: get STL vectors from HullBuilder class
 		// blueHull();
 		// blueSTL();
@@ -1423,11 +1426,6 @@ public class UCubeV24 extends PApplet {
 
 	public void drawMst() {
 
-		// int offset = 10;
-		// int offset = spacing/2;
-		// lerpPoints();
-		// doCubes();
-
 		strokeWeight(1);
 		if (doFill) {
 			fill(200);
@@ -1457,8 +1455,6 @@ public class UCubeV24 extends PApplet {
 		mst = k.getMSTEdges();
 
 		for (int i = 0; i < mst.size(); i++) {
-
-			// println(i);
 
 			Edge e = mst.get(i);
 

@@ -93,6 +93,8 @@ public class PopCAD_v1 extends PApplet {
 	int grey = color(100);
 	int activeColor = grey;
 
+	int pointCounter = 0;
+	
 	// spanning tree
 	int maximumVertices;
 	Graph g;
@@ -149,12 +151,12 @@ public class PopCAD_v1 extends PApplet {
 			String inString = myPort.readStringUntil('\n');
 			//inString = "101010101010101010101010101";
 			//inString = "100100100100100100100100100";
-			println(inString);
+			//println(inString);
 
 			if (inString != null) {
 
 				inString = trim(inString);
-				println(inString);
+				//println(inString);
 
 				if (firstContact == false) {
 					// if we get a hello, clear the port, set firstcontact to
@@ -182,18 +184,18 @@ public class PopCAD_v1 extends PApplet {
 						// coordinates and redraw the hull
 						if (readSerial == true) {
 							oldString = inString;
-							println(inString);
+							//println(inString);
 							//reDraw = true;
 						}
 
 
 						int counter = 0;
-						println("counter: " + counter);
+						//println("counter: " + counter);
 
 
 						//vectors = new Vec3D[0];
 						vectors.clear();
-						knotVectors.clear();
+						//knotVectors.clear();
 						points = new Point3d[0];
 
 						kVectors = null;
@@ -202,11 +204,12 @@ public class PopCAD_v1 extends PApplet {
 						mVectors = null;
 						mVectors = new Vec3D[0];
 
-						for (int i = 0; i < inString.length()-1; i++) {
+						for (int i = 0; i < inString.length(); i++) {
 
 							char bit = inString.charAt(i);
 							//println(bit);
 
+							//TODO: make knot ordering work
 							if (bit == '1') {
 
 								vectors.add(masterVectArray[counter]);
@@ -221,6 +224,7 @@ public class PopCAD_v1 extends PApplet {
 									.add(masterVectArray[counter]);
 									// println(masterVectArray[counter]
 									// + " true");
+									
 									reDrawKnot = true;
 									knotMesh.clear();
 								}
@@ -287,7 +291,7 @@ public class PopCAD_v1 extends PApplet {
 				if (doKnot == true) {
 
 					if (reDrawKnot == true) {
-						println("redrawknot");
+						//println("redrawknot");
 
 						drawKnot();
 					}
@@ -395,14 +399,14 @@ public class PopCAD_v1 extends PApplet {
 				for (int y = 0; y < 3; y++) {
 
 					Vec3D tempVect = new Vec3D(x * spacing, y * -spacing, z
-							* spacing); // maybe should be i,k,j so moves in Y
+							* spacing); // maybe should be i,k,j so moves in Y	
 					Point3d tempPoint = new Point3d(x * spacing, y * -spacing,
 							z * spacing);
 					masterVectArray = (Vec3D[]) append(masterVectArray,
 							tempVect);
 					masterPointArray = (Point3d[]) append(masterPointArray,
 							tempPoint);
-					println("x: " + x + "  y: " + y + "  z: " + z);
+					//println("x: " + x + "  y: " + y + "  z: " + z);
 					//println("points: " + masterPointArray.length);
 				}
 			}
@@ -442,7 +446,7 @@ public class PopCAD_v1 extends PApplet {
 		controlP5.addButton("ExportTree", 0, 100, 480, 80, 19);
 		controlP5.addButton("ClearTree", 0, 100, 500, 80, 19);
 
-		Slider s = controlP5.addSlider("offset", 5, 35, offset, 100, 520, 80,
+		Slider s = controlP5.addSlider("offset", 5, spacing/2, offset, 100, 520, 80,
 				19);
 
 
@@ -915,7 +919,8 @@ public class PopCAD_v1 extends PApplet {
 
 		}
 
-		for (int i = 0; i < knotVectors.size() - 1; i++) {
+		for (int i = 0; i < knotVectors.size() -1; i++) {
+		//for(int i = knotVectors.size()-1; i > 0; i--) {
 
 			Vec3D vec = knotVectors.get(i);
 			float x = vec.x;
@@ -927,6 +932,8 @@ public class PopCAD_v1 extends PApplet {
 			float y2 = vec2.y;
 			float z2 = vec2.z;
 
+			println(vec + " " + vec2);
+			
 			knotPoints = new Point3d[0];
 
 			Point3d p1 = new Point3d(x + offset, y + offset, z + offset);
