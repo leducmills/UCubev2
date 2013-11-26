@@ -81,7 +81,7 @@ public class Nav3D {
 						&& y < p.mouseY + 3) {
 					vertexMouseOver = i;
 					
-					PApplet.println("hit" + x + " " + y);
+					//PApplet.println("hit" + " " + x + " " + y);
 					//p.ellipse(p.screenX(vectors.get(vertexMouseOver).x, vectors.get(vertexMouseOver).y), p.screenY(vectors.get(vertexMouseOver).x, vectors.get(vertexMouseOver).y), 50, 50);
 
 				}
@@ -94,8 +94,8 @@ public class Nav3D {
 		// if edit mode is on, and the mouse is over a point, do stuff
 		if (mouseOver == true && vertexMouseOver != -1) {
 
-			PApplet.println("mouseOver: " + mouseOver);
-			PApplet.println(mouseOverVectors[vertexMouseOver]);
+			//PApplet.println("mouseOver: " + mouseOver);
+			//PApplet.println(mouseOverVectors[vertexMouseOver]);
 			
 
 			//u.vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
@@ -125,26 +125,6 @@ public class Nav3D {
 		// if edit mode is on, and the mouse is over a point, do stuff
 				if (mouseOver == true && vertexMouseOver != -1) {
 
-					PApplet.println("mouseOver: " + mouseOver);
-					PApplet.println(mouseOverVectors[vertexMouseOver]);
-
-					//vectors.get(vertexMouseOver).x = p.mouseX - p.width / 2;
-					//vectors.get(vertexMouseOver).y = p.mouseY - p.height / 2;
-					
-					
-//					vectors.get(vertexMouseOver).x = (p.mouseX - (p.width/2))/2;
-//					vectors.get(vertexMouseOver).y = (p.mouseY - (p.height/2))/2;
-					
-					//vectors.get(vertexMouseOver).x += p.mouseX;
-					//vectors.get(vertexMouseOver).y += p.mouseY;
-					
-					vectors.get(vertexMouseOver).x += PApplet.radians(p.mouseX - p.pmouseX) * 40; 
-					vectors.get(vertexMouseOver).y += PApplet.radians(p.mouseY - p.pmouseY) * 40;
-					
-					
-					//u.reDraw = true;
-					//u.drawHull(vectors, points, activeColor);
-					//u.drawHull();
 				}
 
 				else if (mouseOver == false) {

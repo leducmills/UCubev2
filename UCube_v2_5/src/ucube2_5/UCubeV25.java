@@ -32,34 +32,16 @@ public class UCubeV25 extends PApplet {
 	// GUI gui = new GUI(this);
 	Nav3D nav = new Nav3D(this); // camera controller
 	HullBuilder hb = new HullBuilder(this);
-
+	ToxiclibsSupport gfx;
+	
 	// regular hull (all points)
 	QuickHull3D hull = new QuickHull3D(); // init quickhull for hull
 	Point3d[] points; // init Point3d array
-	Point3d[] savedPoints;
+	Point3d[] savedPoints = new Point3d[0];
 	Mesh3D mesh = new TriangleMesh(); // triangle mesh for convex hull
 	// Vec3D[] vectors;
 	ArrayList<Vec3D> vectors = new ArrayList<Vec3D>();
-
-//	// red hull
-//	QuickHull3D redHull = new QuickHull3D();
-//	Point3d[] redPoints;
-//	Point3d[] savedRedPoints;
-//	Mesh3D redMesh = new TriangleMesh();
-//	ArrayList<Vec3D> redSTLVectors = new ArrayList<Vec3D>();
-//	boolean doRedHull = false;
-//	ArrayList<Vec3D> redVectors = new ArrayList<Vec3D>();
-//
-//	// blue hull
-//	QuickHull3D blueHull = new QuickHull3D();
-//	Point3d[] bluePoints;
-//	Point3d[] savedBluePoints;
-//	Mesh3D blueMesh = new TriangleMesh();
-//	ArrayList<Vec3D> blueSTLVectors = new ArrayList<Vec3D>();
-//	boolean doBlueHull = false;
-//	ArrayList<Vec3D> blueVectors = new ArrayList<Vec3D>();
-
-	ToxiclibsSupport gfx;
+	ArrayList<Vec3D> savedVectors = new ArrayList<Vec3D>();
 
 	// knots
 	QuickHull3D knotHull = new QuickHull3D(); // init quickhull for knot
@@ -68,19 +50,18 @@ public class UCubeV25 extends PApplet {
 	Vec3D[] kVectors = new Vec3D[0]; // collection of all knot vectors
 	Point3d[] knotPoints = new Point3d[0]; // knot points (cubes around each
 											// point)
-	Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
+	//Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
 
-	//TO DO: only drawing max width, can't make it skinnier
-	int offset = 10; // how thick your knot is
+	// how thick your path is
+	int offset = 10; 
 
 	// minimal spanning tree
-	QuickHull3D mstHull = new QuickHull3D(); // init quickhull for knot
+	QuickHull3D mstHull = new QuickHull3D(); // init quickhull for mst
 	ArrayList<Vec3D> mstVectors = new ArrayList<Vec3D>();
 	Mesh3D mstMesh = new TriangleMesh();
 	Point3d[] mstPoints = new Point3d[0];
 	Vec3D[] mVectors = new Vec3D[0];
-
-	Vec3D[] sVectors; // spline vectors
+	
 	boolean readSerial = true;
 
 	Serial myPort; // the serial port
@@ -97,17 +78,12 @@ public class UCubeV25 extends PApplet {
 	boolean reDrawKnot = true;
 	boolean doFill = true;
 	boolean doGrid = true;
-	//boolean doSpline = false;
 
 	boolean doHull = false;
 	boolean doKnot = false;
 	boolean doMst = false;
 	boolean reDrawMst = false;
 	PFont myFont; // init font for text
-//	PrintWriter output; // for saving shape
-//	BufferedReader reader; // for loading shapes
-
-	// String inString;
 
 	Vec3D[] masterVectArray = new Vec3D[0];
 	Point3d[] masterPointArray = new Point3d[0];
@@ -128,7 +104,6 @@ public class UCubeV25 extends PApplet {
 		// println(Serial.list());
 
 		size(1440, 835, OPENGL);
-		// size(1400, 800);
 		frameRate(10);
 		gfx = new ToxiclibsSupport(this); // initialize ToxiclibsSupport
 		background(255);
@@ -158,24 +133,20 @@ public class UCubeV25 extends PApplet {
 		pushMatrix();
 		lights();
 		nav.transform(); // do transformations using Nav3D controller
-		// drawGrid();
-
+		
 		if (doGrid == true) {
 			drawGrid(); // draw grid
 		}
 
-//		if (doSpline == true) {
-//			drawSpline(); // do splines
-//		}
 
 		while (myPort.available() > 0) {
 
-			String inString = myPort.readStringUntil('\n');
+			inString = myPort.readStringUntil('\n');
 
 			if (inString != null) {
 
 				inString = trim(inString);
-				// println(inString);
+				//println(inString);
 
 				if (firstContact == false) {
 					// if we get a hello, clear the port, set firstcontact to
@@ -192,8 +163,8 @@ public class UCubeV25 extends PApplet {
 					strokeWeight(8);
 					// stroke(100);
 
-					// inString = inString +
-					// "1000000010001000100010001000010010001000100110001001000010100000100001001000100010000000100010001000100010000100100010001001100010010000101000001000010010001000";
+					//inString = inString +
+					//"1000000010001000100010001000010010001000100110001001000010100000100001001000100010000000100010001000100010000100100010001001100010010000101000001000010010001000";
 
 					// compare inString to oldString to see if coords changed
 					if (inString.equals(oldString)) {
@@ -204,137 +175,107 @@ public class UCubeV25 extends PApplet {
 						// coordinates and redraw the hull
 						if (readSerial == true) {
 							oldString = inString;
-							println(inString);
+							
+							//println(inString);
 							// reDraw = true;
 						}
+						
+						sortString();
 
 
-						int counter = 0;
-						// vectors = new Vec3D[0];
-						vectors.clear();
-						points = new Point3d[0];
-
-						kVectors = null;
-						kVectors = new Vec3D[0];
-
-						mVectors = null;
-						mVectors = new Vec3D[0];
-
-						for (int i = 0; i < inString.length(); i++) {
-							// println("1: " + inString.length());
-							char bit = inString.charAt(i);
-
-							// throw away leading bit from each shift register
-							// (we're only using 7 of the 8 bits)
-							if (i == 0 || i % 8 == 0) {
-								inString.replace(bit, ' ');
-							} else {
-								// if the bit == 1, an led is plugged into that
-								// space, so look up it's coordinate
-								if (bit == '1') {
-
-									// TODO: Stop active color from taking over
-									// grey points
-									// if(activeColor == grey) {
-									// vectors.add(masterVectArray[counter]);
-									// points = (Point3d[]) append(points,
-									// masterPointArray[counter]);
-									// }
-
-//									if (activeColor == red
-//											&& !redVectors
-//													.contains(masterVectArray[counter])
-//											&& !blueVectors
-//													.contains(masterVectArray[counter])
-//											&& !vectors
-//													.contains(masterVectArray[counter])) {
+//						int counter = 0;
+//						// vectors = new Vec3D[0];
+//						vectors.clear();
+//						points = new Point3d[0];
+//						
+//						savedVectors.clear();
+//						savedPoints = new Point3d[0];
+//						//println("cleared");
 //
-//										redVectors
+//						kVectors = null;
+//						kVectors = new Vec3D[0];
+//
+//						mVectors = null;
+//						mVectors = new Vec3D[0];
+//
+//						for (int i = 0; i < inString.length(); i++) {
+//							//println("1: " + inString.length());
+//							char bit = inString.charAt(i);
+//
+//							// throw away leading bit from each shift register
+//							// (we're only using 7 of the 8 bits)
+//							if (i == 0 || i % 8 == 0) {
+//								inString.replace(bit, ' ');
+//							} else {
+//								// if the bit == 1, an led is plugged into that
+//								// space, so look up it's coordinate
+//								if (bit == '1') {
+//
+//									vectors.add(masterVectArray[counter]);
+//									points = (Point3d[]) append(points,
+//											masterPointArray[counter]);
+//									
+//									savedVectors.add(masterVectArray[counter]);
+//									savedPoints = (Point3d[]) append(savedPoints,
+//											masterPointArray[counter]);
+//									println("bit = 1 added");
+//
+//									if (knotVectors
+//											.contains(masterVectArray[counter])) {
+//
+//									} else {
+//										knotVectors
 //												.add(masterVectArray[counter]);
-//										// println("added red");
-//										initRedPoints();
-//
+//										// println(masterVectArray[counter]
+//										// + " true");
+//										reDrawKnot = true;
+//										knotMesh.clear();
 //									}
 //
-//									if (activeColor == blue
-//											&& !blueVectors
-//													.contains(masterVectArray[counter])
-//											&& !redVectors
-//													.contains(masterVectArray[counter])
-//											&& !vectors
-//													.contains(masterVectArray[counter])) {
+//									if (mstVectors
+//											.contains(masterVectArray[counter])) {
 //
-//										blueVectors
+//									} else {
+//										mstVectors
 //												.add(masterVectArray[counter]);
-//										// println("added green");
-//										initBluePoints();
+//										reDrawMst = true;
+//										mstMesh.clear();
 //									}
-
-									// println(i + " " + bit + " " + counter +
-									// " " + masterPointArray[counter]);
-									// vectors = (Vec3D[])
-									// append(vectors,masterVectArray[counter]);
-									vectors.add(masterVectArray[counter]);
-									points = (Point3d[]) append(points,
-											masterPointArray[counter]);
-
-									if (knotVectors
-											.contains(masterVectArray[counter])) {
-
-									} else {
-										knotVectors
-												.add(masterVectArray[counter]);
-										// println(masterVectArray[counter]
-										// + " true");
-										reDrawKnot = true;
-										knotMesh.clear();
-									}
-
-									if (mstVectors
-											.contains(masterVectArray[counter])) {
-
-									} else {
-										mstVectors
-												.add(masterVectArray[counter]);
-										reDrawMst = true;
-										mstMesh.clear();
-									}
-
-								}
-
-								if (bit == '0') {
-
-//									redVectors.remove(masterVectArray[counter]);
-//									initRedPoints();
-//									// println("removed red");
 //
-//									blueVectors
-//											.remove(masterVectArray[counter]);
-//									initBluePoints();
-//									// println("removed green");
-
-									if (knotVectors
-											.contains(masterVectArray[counter])) {
-										knotVectors
-												.remove(masterVectArray[counter]);
-										reDrawKnot = true;
-										knotMesh.clear();
-										// println("removed");
-									}
-
-									if (mstVectors
-											.contains(masterVectArray[counter])) {
-										mstVectors
-												.remove(masterVectArray[counter]);
-										reDrawMst = true;
-										mstMesh.clear();
-									}
-								}
-
-								counter++;
-							}
-						}
+//								}
+//
+//								if (bit == '0') {
+//
+//									if (knotVectors
+//											.contains(masterVectArray[counter])) {
+//										knotVectors
+//												.remove(masterVectArray[counter]);
+//										reDrawKnot = true;
+//										knotMesh.clear();
+//										// println("removed");
+//									}
+//
+//									if (mstVectors
+//											.contains(masterVectArray[counter])) {
+//										mstVectors
+//												.remove(masterVectArray[counter]);
+//										reDrawMst = true;
+//										mstMesh.clear();
+//									}
+//								}
+//
+//								
+//								counter++;
+//							}
+//							
+//						}
+						
+						
+						//savedVectors = (ArrayList<Vec3D>) vectors.clone();
+						//println("cloned");
+						
 					}
+					
 
 					if (vectors.size() > 0) {
 						stroke(grey);
@@ -350,56 +291,18 @@ public class UCubeV25 extends PApplet {
 							float z = vectors.get(j).z;
 							point(x, y, z);
 						}
+						
+						
+						
 					}
-
-//					if (redVectors.size() > 0) {
-//						stroke(red);
-//						if (doFill) {
-//							// fill(200);
-//						} else {
-//							noFill();
-//						}
-//						for (int j = 0; j < redVectors.size(); j++) {
-//							// println(vectors[j]);
-//							float x = redVectors.get(j).x;
-//							float y = redVectors.get(j).y;
-//							float z = redVectors.get(j).z;
-//							point(x, y, z);
-//						}
-//					}
-//
-//					if (blueVectors.size() > 0) {
-//						stroke(blue);
-//						if (doFill) {
-//							// fill(200);
-//						} else {
-//							noFill();
-//						}
-//						for (int j = 0; j < blueVectors.size(); j++) {
-//							// println(vectors[j]);
-//							float x = blueVectors.get(j).x;
-//							float y = blueVectors.get(j).y;
-//							float z = blueVectors.get(j).z;
-//							point(x, y, z);
-//						}
-//					}
-
 					// call drawHull function if Hull mode is active
 					// need to change point array for edit mode to work?
 					if (doHull == true) {
 						drawHull(vectors, points, grey);
+						
 
 					}
 
-//					if (doRedHull == true) {
-//						drawHull(redVectors, redPoints, red);
-//					}
-//
-//					if (doBlueHull == true) {
-//						drawHull(blueVectors, bluePoints, blue);
-//					}
-
-					// draw knot if doKnot boolean == true
 					if (doKnot == true) {
 
 						if (reDrawKnot == true) {
@@ -452,10 +355,6 @@ public class UCubeV25 extends PApplet {
 					// vertices
 					if (readSerial == false) {
 						nav.hitDetection(vectors);
-//						nav.hitDetection(redVectors);
-//						nav.hitDetection(blueVectors);
-						//nav.hitDetection(knotVectors);
-						// hitDectection();
 					}
 				}
 			}
@@ -477,11 +376,14 @@ public class UCubeV25 extends PApplet {
 		doMouseOvers(); // text cues on button rollover
 
 		// ask for another reading
-		myPort.write("A"); // check if this is the right place for this line
+		myPort.write("A"); 
 	}// end draw
 
 	public void initCoordArray() {
 
+		masterVectArray = new Vec3D[0];
+		masterPointArray = new Point3d[0];
+		
 		for (int z = 6; z > -1; z--) {
 
 			for (int x = 6; x > -1; x--) {
@@ -496,72 +398,47 @@ public class UCubeV25 extends PApplet {
 							tempVect);
 					masterPointArray = (Point3d[]) append(masterPointArray,
 							tempPoint);
-					// println("x: " + x + "  y: " + y + "  z: " + z);
-					// println("points: " + masterPointArray.length);
 				}
 			}
 		}
-
-		// println(vectors.length);
 	}
 
 	// --------------------------GUI----------------------------------//
 
 	// Initialize buttons and NAV3D class
 	public void initControllers() {
-		// nav = new Nav3D();
+		
+		int buttonWidth = 130;
+		int buttonHeight = 29;
+		int bSpacing = 30;
+		int start = 100;
 
 		controlP5 = new ControlP5(this);
 		controlP5.setColorBackground(50);
 
-		controlP5.addButton("Hull", 0, 100, 100, 80, 19);
-		controlP5.addButton("Export", 0, 100, 120, 80, 19);
+		controlP5.addButton("Hull", 0, 100, start, buttonWidth, buttonHeight);
+		controlP5.addButton("Path", 0, 100, start + bSpacing, buttonWidth, buttonHeight);
+		controlP5.addButton("Tree", 0, 100, start + bSpacing *2, buttonWidth, buttonHeight);
 		
-		controlP5.addButton("Edit", 0, 100, 160, 80, 19);
-		controlP5.addButton("Reset", 0, 100, 180, 80, 19);
-
-		controlP5.addButton("WireFrame", 0, 100, 220, 80, 19);
-		controlP5.addButton("Grid", 0, 100, 240, 80, 19);
-//		controlP5.addButton("Spline", 0, 100, 260, 80, 19);
-//		
-//		controlP5.addButton("Save", 0, 100, 300, 80, 19);
-//		controlP5.addButton("Load", 0, 100, 320, 80, 19);
-
-		controlP5.addButton("Knot", 0, 100, 360, 80, 19);
-//		controlP5.addButton("ExportKnot", 0, 100, 380, 80, 19);
-		controlP5.addButton("CloseKnot", 0, 100, 400, 80, 19);
-//		controlP5.addButton("ClearKnot", 0, 100, 420, 80, 19);
-
-		controlP5.addButton("Tree", 0, 100, 460, 80, 19);
-//		controlP5.addButton("ExportTree", 0, 100, 480, 80, 19);
-//		controlP5.addButton("ClearTree", 0, 100, 500, 80, 19);
-
-		Slider s = controlP5.addSlider("slider", 5, spacing/2, 10, 100, 520, 80,
-				19);
+		controlP5.addButton("Export", 0, 100, start + bSpacing *4, buttonWidth, buttonHeight);
+		controlP5.addButton("ClosePath", 0, 100, start + bSpacing *5, buttonWidth, buttonHeight);
 		
-//		controlP5.addButton("BlueHull", 0, 200, 140, 80, 19);
-//		controlP5.addButton("ExportBlue", 0, 200, 160, 80, 19);
-//		
-//		controlP5.addButton("RedHull", 0, 200, 180, 80, 19);
-//		controlP5.addButton("ExportRed", 0, 200, 200, 80, 19);
-		
-		
+		controlP5.addButton("Edit", 0, 100, start + bSpacing *7, buttonWidth, buttonHeight);
+		controlP5.addButton("Reset", 0, 100, start + bSpacing *8, buttonWidth, buttonHeight);
 
-		
+		controlP5.addButton("WireFrame", 0, 100, start + bSpacing *10, buttonWidth, buttonHeight);
+		controlP5.addButton("Grid", 0, 100, start + bSpacing *11, buttonWidth, buttonHeight);
 
+//		Slider s = controlP5.addSlider("slider", 5, spacing/2, 10, 100, start + spacing *12, buttonWidth,
+//				buttonHeight);
+		
+		Slider s = controlP5.addSlider("slider", 3, spacing, 10, 150, start + bSpacing *12, buttonWidth-50,
+				buttonHeight);
+		
 		controlP5.Label label = s.captionLabel();
-		label.style().marginLeft = -140;
+		label.style().marginLeft = -133;
 		s.setColorLabel(50);
-		s.setLabel("knot width");
-
-//		checkBox = controlP5.addCheckBox("checkBox", 200, 100);
-//		checkBox.setSize(19, 19);
-//		checkBox.setItemsPerRow(1);
-//		checkBox.setSpacingRow(1);
-//		checkBox.addItem("red", 1);
-//		checkBox.addItem("blue", 2);
-//		checkBox.deactivateAll();
-
+		s.setLabel("path width");
 	}
 
 	public void slider(int theWidth) {
@@ -574,44 +451,6 @@ public class UCubeV25 extends PApplet {
 			drawMst();
 		}
 	}
-	
-//	public void controlEvent(ControlEvent theEvent) {
-//
-//		if (theEvent.isGroup()) {
-//			// print("got an event from "+theEvent.group().name()+"\t");
-//			// checkbox uses arrayValue to store the state of
-//			// individual checkbox-items. usage:
-//			for (int i = 0; i < theEvent.group().arrayValue().length; i++) {
-//				int n = (int) theEvent.group().arrayValue()[i];
-//
-//				if (theEvent.group().arrayValue()[0] == 0
-//						&& theEvent.group().arrayValue()[1] == 0) {
-//					activeColor = grey;
-//					// println("grey");
-//				}
-//
-//				if (n == 1) {
-//					// ((RadioButton)theEvent.group()).getItem(i).internalValue();
-//					println(((RadioButton) theEvent.group()).getItem(i)
-//							.internalValue());
-//					int selected = (int) ((RadioButton) theEvent.group())
-//							.getItem(i).internalValue();
-//					// red
-//					if (selected == 1) {
-//						activeColor = red;
-//						// println("red");
-//					}
-//
-//					// green
-//					if (selected == 2) {
-//						activeColor = blue;
-//						// println("green");
-//
-//					}
-//				}
-//			}
-//		}
-//	}
 
 	// help text when mouse is over buttons
 	public void doMouseOvers() {
@@ -625,7 +464,7 @@ public class UCubeV25 extends PApplet {
 		}
 
 		if (controlP5.controller("WireFrame").isInside()) {
-			message = "Toggles wireframe - works with the Hull button on.";
+			message = "Toggles wireframe.";
 		}
 
 		if (controlP5.controller("Grid").isInside()) {
@@ -636,9 +475,6 @@ public class UCubeV25 extends PApplet {
 			message = "Exports your shape as an .stl file for 3D printing.";
 		}
 
-//		if (controlP5.controller("Spline").isInside()) {
-//			message = "Connects the points with spines (curves).";
-//		}
 
 		if (controlP5.controller("Edit").isInside()) {
 			message = "Turns on edit mode, where you can click and drag points to alter the shape.";
@@ -648,61 +484,22 @@ public class UCubeV25 extends PApplet {
 			message = "Resets edited points back to the default grid.";
 		}
 
-//		if (controlP5.controller("Save").isInside()) {
-//			message = "Save your shape to a text file that you can load later.";
-//		}
-//
-//		if (controlP5.controller("Load").isInside()) {
-//			message = "Load a shape that you have previously saved.";
-//		}
-
-		if (controlP5.controller("Knot").isInside()) {
-			message = "Make a knot.";
+		if (controlP5.controller("Path").isInside()) {
+			message = "Create a sequential path.";
 		}
 
-//		if (controlP5.controller("ExportKnot").isInside()) {
-//			message = "Export knot as an STL file.";
-//		}
-//
-//		if (controlP5.controller("ClearKnot").isInside()) {
-//			message = "Clears the knot so you can start a new path.";
-//		}
-
-		if (controlP5.controller("CloseKnot").isInside()) {
-			message = "Closes your knot.";
+		if (controlP5.controller("ClosePath").isInside()) {
+			message = "Closes your path.";
 		}
 
 		if (controlP5.controller("slider").isInside()) {
-			message = "Changes the thickness of the knot.";
+			message = "Changes the thickness of your path or tree";
 		}
 
 		if (controlP5.controller("Tree").isInside()) {
 			message = "Makes a minimal spaninng tree.";
 		}
 
-//		if (controlP5.controller("ExportTree").isInside()) {
-//			message = "Exports the STL of your tree.";
-//		}
-//
-//		if (controlP5.controller("ClearTree").isInside()) {
-//			message = "Clears the points of the Tree.";
-//		}
-//
-//		if (controlP5.controller("RedHull").isInside()) {
-//			message = "Toggles the red convex hull (fill).";
-//		}
-//
-//		if (controlP5.controller("BlueHull").isInside()) {
-//			message = "Toggles the blue convex hull (fill).";
-//		}
-//
-//		if (controlP5.controller("ExportRed").isInside()) {
-//			message = "Exports the STL of the Red Hull.";
-//		}
-//
-//		if (controlP5.controller("ExportBlue").isInside()) {
-//			message = "Exports the STL of the Blue Hull";
-//		}
 
 		if (message != null && controlP5.window(this).isMouseOver()) {
 			textSize(14);
@@ -710,7 +507,6 @@ public class UCubeV25 extends PApplet {
 		}
 	}
 
-	// TODO: make edit mode work
 	// pass mouse and key events to our Nav3D instance
 	@Override
 	public void mouseDragged() {
@@ -718,42 +514,50 @@ public class UCubeV25 extends PApplet {
 		if (controlP5.window(this).isMouseOver())
 			return;
 
-		// nav.mouseDragged();
-		// nav.mouseDragged(vectors, points, activeColor);
 		if (nav.mouseOver == true && nav.vertexMouseOver != -1) {
-			// PApplet.println("mouseOver: " + nav.mouseOver);
-			// PApplet.println(vectors.get(nav.vertexMouseOver));
-
 			if (activeColor == grey) {
 				//ellipse(screenX(vectors.get(nav.vertexMouseOver).x/4, vectors.get(nav.vertexMouseOver).y), screenY(vectors.get(nav.vertexMouseOver).x, vectors.get(nav.vertexMouseOver).y), 50, 50);
+				//editShape(vectors, points);
 				editShape(vectors, points);
-				//editShape(knotVectors, knotPoints);
 			}
-
-//			if (activeColor == red) {
-//				editShape(redVectors, redPoints);
-//			}
-//			if (activeColor == blue) {
-//				editShape(blueVectors, bluePoints);
-//			}		
+	
 		} else {
 			nav.mouseDragged();
 		}
 	}
-
+ 
+	//TODO:make editing and reset work
 	public void editShape(ArrayList<Vec3D> vectors, Point3d[] points) {
+	//public void editShape() {
+		
+		
+		
+		println(vectors.subList(0, 5));
+	    println(savedVectors.subList(0,5));
+	    
+	    //println(points[2].toString());
+	   // println(savedPoints[2].toString());
+	    
+	    println(nav.vertexMouseOver);
 
 		vectors.get(nav.vertexMouseOver).x += PApplet.radians(mouseX - pmouseX) * 40;
 		vectors.get(nav.vertexMouseOver).y += PApplet.radians(mouseY - pmouseY) * 40;
 
+		//println(vectors.get(nav.vertexMouseOver).x + " " + savedVectors.get(nav.vertexMouseOver).x);
+
 		points[nav.vertexMouseOver].x += PApplet.radians(mouseX - pmouseX) * 40;
-		points[nav.vertexMouseOver].y += PApplet.radians(mouseY - pmouseY) * 40;
+		points[nav.vertexMouseOver].y += PApplet.radians(mouseY - pmouseY) * 40;	
 		
-		//ellipse(vectors.get(nav.vertexMouseOver).x, vectors.get(nav.vertexMouseOver).y, 50, 50);
+		reDrawMst = true;
+		reDrawKnot = true;
+		
+		for(int i = 0; i < masterVectArray.length; i++) {
+			//println(masterVectArray[i]);
+		}
+
 		
 	}
 	
-
 	@Override
 	public void mouseReleased() {
 		nav.mouseReleased();
@@ -767,8 +571,6 @@ public class UCubeV25 extends PApplet {
 	// draw the little grey grid
 	public void drawGrid() {
 
-		// draw rest of grid
-		// (spacing * (gridSize -1) * -1) /2 = center around 0
 		int xpos = 0;
 		int ypos = 0;
 		int zpos = 0;
@@ -795,18 +597,18 @@ public class UCubeV25 extends PApplet {
 
 		strokeWeight(1);
 		textSize(32);
-		stroke(150, 0, 150);
-		line(0, 0, 0, 100, 0, 0);
-		fill(150, 0, 150);
-		text("X", 220, 0);
+		stroke(150, 0, 20);
+		line(-20, 20, 0, 800, 20, 0);
+		fill(150, 0, 20);
+		text("X", 260, 20);
 		stroke(0, 150, 0);
-		line(0, 0, 0, 0, -100, 0);
+		line(-20, 20, 0, -20, -500, 0);
 		fill(0, 150, 0);
-		text("Y", 0, -220);
+		text("Y", -20, -260);
 		stroke(0, 0, 150);
-		line(0, 0, 0, 0, 0, 100);
+		line(-20, 20, 0, -20, 20, 800);
 		fill(0, 0, 150);
-		text("Z", 0, 0, 220);
+		text("Z", -50, 20, 260);
 		fill(0, 0, 0);
 	}
 
@@ -819,25 +621,8 @@ public class UCubeV25 extends PApplet {
 		}
 	}
 
-//	public void BlueHull(int theValue) {
-//		if (doBlueHull == true) {
-//			doBlueHull = false;
-//		} else if (doBlueHull == false) {
-//			doBlueHull = true;
-//		}
-//	}
-//
-//	public void RedHull(int theValue) {
-//		if (doRedHull == true) {
-//			doRedHull = false;
-//		} else if (doRedHull == false) {
-//			doRedHull = true;
-//		}
-//	}
-
 	// toggle wireframe
 	public void WireFrame(int theValue) {
-
 		if (doFill == true) {
 			// doHull = true;
 			doFill = false;
@@ -849,7 +634,6 @@ public class UCubeV25 extends PApplet {
 
 	// toggle grid
 	public void Grid(int theValue) {
-
 		if (doGrid == true) {
 			doGrid = false;
 		} else if (doGrid == false) {
@@ -858,19 +642,126 @@ public class UCubeV25 extends PApplet {
 	}
 	//TODO: is this the best way?
 	public void Reset(int theValue) {
-		masterVectArray = new Vec3D[0];
-		masterPointArray = new Point3d[0];
-		clearKnot();
-		clearTree();
+		
+//		println(vectors.subList(0, 5));
+//	    println(savedVectors.subList(0,5));
+		
 		initCoordArray();
+//		for(int i = 0; i < masterVectArray.length; i++) {
+//			println(masterVectArray[i]);
+//		}
+		
+		sortString();
+		//println(vectors.size());
+		
 	}
+	
+	
+	public void sortString() {
+		
+		int counter = 0;
+		// vectors = new Vec3D[0];
+		vectors.clear();
+		points = new Point3d[0];
+		
+		savedVectors.clear();
+		savedPoints = new Point3d[0];
+		//println("cleared");
+
+		kVectors = null;
+		kVectors = new Vec3D[0];
+		knotPoints = new Point3d[0];
+		knotVectors.clear();
+
+		mVectors = null;
+		mVectors = new Vec3D[0];
+		mstVectors.clear();
+		mstPoints = new Point3d[0];
+		
+		
+		for (int i = 0; i < inString.length(); i++) {
+			//println("1: " + inString.length());
+			char bit = inString.charAt(i);
+
+			// throw away leading bit from each shift register
+			// (we're only using 7 of the 8 bits)
+			if (i == 0 || i % 8 == 0) {
+				inString.replace(bit, ' ');
+			} else {
+				// if the bit == 1, an led is plugged into that
+				// space, so look up it's coordinate
+				if (bit == '1') {
+
+					vectors.add(masterVectArray[counter]);
+					points = (Point3d[]) append(points,
+							masterPointArray[counter]);
+					
+					savedVectors.add(masterVectArray[counter]);
+					savedPoints = (Point3d[]) append(savedPoints,
+							masterPointArray[counter]);
+					println("bit = 1 added");
+
+					if (knotVectors
+							.contains(masterVectArray[counter])) {
+
+					} else {
+						knotVectors
+								.add(masterVectArray[counter]);
+						// println(masterVectArray[counter]
+						// + " true");
+						reDrawKnot = true;
+						knotMesh.clear();
+					}
+
+					if (mstVectors
+							.contains(masterVectArray[counter])) {
+
+					} else {
+						mstVectors
+								.add(masterVectArray[counter]);
+						reDrawMst = true;
+						mstMesh.clear();
+					}
+
+				}
+
+				if (bit == '0') {
+
+					if (knotVectors
+							.contains(masterVectArray[counter])) {
+						knotVectors
+								.remove(masterVectArray[counter]);
+						reDrawKnot = true;
+						knotMesh.clear();
+						// println("removed");
+					}
+
+					if (mstVectors
+							.contains(masterVectArray[counter])) {
+						mstVectors
+								.remove(masterVectArray[counter]);
+						reDrawMst = true;
+						mstMesh.clear();
+					}
+				}
+
+				
+				counter++;
+			}
+			
+		}
+		
+		reDrawKnot = true;
+		reDrawMst = true;
+		
+		
+	}
+	
 
 	// toggle knot
-	public void Knot(int theValue) {
-
+	public void Path(int theValue) {
 		if (doKnot == true) {
 			doKnot = false;
-
 		} else if (doKnot == false) {
 			doKnot = true;
 			kVectors = new Vec3D[0];
@@ -878,13 +769,8 @@ public class UCubeV25 extends PApplet {
 		}
 	}
 
-	// clear the knot arrays
-	public void ClearKnot(int theValue) {
-		clearKnot();
-	}
-
 	// close last segment of Knot
-	public void CloseKnot(int theValue) {
+	public void ClosePath(int theValue) {
 		closeKnot();
 	}
 
@@ -898,16 +784,6 @@ public class UCubeV25 extends PApplet {
 			drawMst();
 		}
 	}
-
-	// clear MST
-	public void ClearTree(int theValue) {
-
-		clearTree();
-//		mVectors = new Vec3D[0];
-//		mstVectors.clear();
-//		mstPoints = new Point3d[0];
-
-	}
 	
 	public void clearTree() {
 		mVectors = new Vec3D[0];
@@ -916,9 +792,7 @@ public class UCubeV25 extends PApplet {
 	}
 
 	// enter edit mode
-	// TODO: Edit mode
 	public void Edit(int theValue) {
-
 		if (readSerial == true) {
 			readSerial = false;
 			nav.mouseOver = true;
@@ -927,52 +801,9 @@ public class UCubeV25 extends PApplet {
 			nav.mouseOver = false;	
 		}
 	}
-//
-//	// toggle spline
-//	public void Spline(int theValue) {
-//
-//		if (doSpline == true) {
-//			doSpline = false;
-//		}
-//
-//		else if (doSpline == false) {
-//			doSpline = true;
-//		}
-//	}
-
-//	// draw a spline through the points
-//	public void drawSpline() {
-//
-//		if (points.length > 2) {
-//
-//			sVectors = new Vec3D[0];
-//
-//			for (int i = 0; i < points.length; i++) {
-//
-//				float x = (float) points[i].x;
-//				float y = (float) points[i].y;
-//				float z = (float) points[i].z;
-//
-//				Vec3D tempVect = new Vec3D(x, y, z);
-//				sVectors = (Vec3D[]) append(sVectors, tempVect);
-//			}
-//
-//			Spline3D spline = new Spline3D(knotVectors);
-//			java.util.List vertices = spline.computeVertices(8);
-//
-//			noFill();
-//			beginShape();
-//			for (Iterator i = vertices.iterator(); i.hasNext();) {
-//				Vec3D v = (Vec3D) i.next();
-//				vertex(v.x, v.y, v.z);
-//			}
-//			endShape();
-//		}
-//	}
 
 	// EXPORT ALL THE THINGS
 	public void Export(int theValue) {
-		// hb.stlVectors.clear();
 		if(doHull==true) {
 		drawHull(vectors, points, grey);
 		outputSTL(hb.stlVectors, mesh);
@@ -985,39 +816,23 @@ public class UCubeV25 extends PApplet {
 			outputSTL(kVectors);
 		}
 	}
-
-//	// export stl of knot
-//	public void ExportKnot(int theValue) {
-//		//outputKnot();
-//		//outputPath();
-//		outputSTL(kVectors);
-//	}
-//
-//	// export STL of MST
-//	public void ExportTree(int theValue) {
-//		//outputMst();
-//		outputSTL(mVectors);
-//	}
-//
-//	// export Green Hull
-//	public void ExportBlue(int theValue) {
-//		// TODO: get STL vectors from HullBuilder class
-//		// blueHull();
-//		// blueSTL();
-//
-//		drawHull(blueVectors, bluePoints, grey);
-//		outputSTL(hb.stlVectors, blueMesh);
-//	}
-//
-//	// export Red Hull
-//	public void ExportRed(int theValue) {
-//
-//		// redHull();
-//		// redSTL();
-//		drawHull(redVectors, redPoints, grey);
-//		outputSTL(hb.stlVectors, redMesh);
-//	}
 	
+	public String getDate() {
+		
+		String timeStamp;
+		
+		Integer d = day();
+		Integer m = month();
+		Integer min = minute();
+		
+		String desktop = "/users/Ben/Desktop/";
+		
+		timeStamp = desktop + "myShape_" + m.toString() + d.toString() + min.toString() + ".stl";
+		
+		message = "Export Success!";
+		
+		return timeStamp;
+	}
 	
 	//ONE EXPORT TO RULE THEM ALL!
 	public void outputSTL(Vec3D[] vectors) {
@@ -1026,116 +841,31 @@ public class UCubeV25 extends PApplet {
 		TriangleMesh mySTL = new TriangleMesh();
 
 		for (int i = 0; i < vectors.length; i += 3) {
-
 			mesh.addFace(vectors[i], vectors[i + 1], vectors[i + 2]);
-			// println(vectors[i] + " " + vectors[i+1] + " " + vectors[i+2]);
 		}
 
 		mesh.flipYAxis();
 		mesh.flipVertexOrder();
 		mySTL.addMesh(mesh);
-		mySTL.saveAsSTL(selectOutput());
+		//mySTL.saveAsSTL(selectOutput());
+		mySTL.saveAsSTL(getDate());
 		
 	}
 	
 	public void outputSTL(ArrayList<Vec3D> vectors, Mesh3D mesh) {
 
 		mesh.clear();
-
 		TriangleMesh mySTL = new TriangleMesh();
 
 		for (int i = 0; i < vectors.size(); i += 3) {
-
 			mesh.addFace(vectors.get(i), vectors.get(i + 1), vectors.get(i + 2));
-			// println(vectors[i] + " " + vectors[i+1] + " " + vectors[i+2]);
 		}
 
 		mesh.flipYAxis();
 		mySTL.addMesh(mesh);
-		mySTL.saveAsSTL(selectOutput());
+		mySTL.saveAsSTL(getDate());
 	}
 
-//	// Use this for knot and mst
-//	public void outputPath(Vec3D[] vectors, TriangleMesh mesh) {
-//
-//		mesh.clear();
-//		TriangleMesh mySTL = new TriangleMesh();
-//
-//		for (int i = 0; i < vectors.length; i += 3) {
-//
-//			mesh.addFace(vectors[i], vectors[i + 1], vectors[i + 2]);
-//			// println(vectors[i] + " " + vectors[i+1] + " " + vectors[i+2]);
-//		}
-//
-//		mesh.flipYAxis();
-//		mesh.flipVertexOrder();
-//		mySTL.addMesh(mesh);
-//		mySTL.saveAsSTL(selectOutput());
-//	}
-//
-//
-//	// stl writer for knot
-//	public void outputKnot() {
-//
-//		TriangleMesh mySTL = new TriangleMesh();
-//
-//		for (int i = 0; i < kVectors.length; i += 3) {
-//
-//			knotMesh.addFace(kVectors[i], kVectors[i + 1], kVectors[i + 2]);
-//			println(kVectors[i] + " " + kVectors[i + 1] + " " + kVectors[i + 2]);
-//		}
-//
-//		knotMesh.flipYAxis();
-//		knotMesh.flipVertexOrder();
-//		mySTL.addMesh(knotMesh);
-//		mySTL.saveAsSTL(selectOutput());
-//	}
-//
-//	public void outputMst() {
-//
-//		TriangleMesh mySTL = new TriangleMesh();
-//
-//		for (int i = 0; i < mVectors.length; i += 3) {
-//
-//			mstMesh.addFace(mVectors[i], mVectors[i + 1], mVectors[i + 2]);
-//			println(mVectors[i] + " " + mVectors[i + 1] + " " + mVectors[i + 2]);
-//		}
-//
-//		mstMesh.flipYAxis();
-//		mstMesh.flipVertexOrder();
-//		mySTL.addMesh(mstMesh);
-//		mySTL.saveAsSTL(selectOutput());
-//
-//	}
-
-//	// save a text file of active points
-//	public void Save(int theValue) {
-//
-//		// Create a new file in the sketch directory
-//		output = createWriter(selectOutput());
-//		// write the coordinates to the file
-//
-//		for (int i = 0; i < vectors.size(); i++) {
-//			output.print(vectors.get(i).x / spacing + "," + vectors.get(i).y
-//					/ spacing * -1 + "," + vectors.get(i).z / spacing + ";");
-//		}
-//
-//		output.flush();
-//		output.close();
-//	}
-//
-//	// load in a text file of active points
-//	public void Load(int theValue) {
-//
-//		// read in a text file
-//		reader = createReader(selectInput());
-//
-//		try {
-//			inString = reader.readLine();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
 
 	// --------------------------KNOT
 	// FUNCTIONS----------------------------------//
@@ -1229,7 +959,6 @@ public class UCubeV25 extends PApplet {
 	public void closeKnot() {
 
 		int i = knotVectors.size();
-		// println(i);
 
 		Vec3D vec = knotVectors.get(0);
 		float x = vec.x;
@@ -1289,8 +1018,6 @@ public class UCubeV25 extends PApplet {
 	public void doKnotHull(Point3d[] knotPoints) {		
 		
 		int numPoints = knotPoints.length;
-		//kVectors = new Vec3D[0];
-		
 
 		if (knotHull.myCheck(knotPoints, numPoints) == false) {
 		} else if (knotHull.myCheck(knotPoints, numPoints) == true) {
@@ -1314,18 +1041,12 @@ public class UCubeV25 extends PApplet {
 					float x = (float) pnt2.x;
 					float y = (float) pnt2.y;
 					float z = (float) pnt2.z;
-					// vertex(x, y, z);
 					Vec3D tempVect = new Vec3D(x, y, z);
-					// println(x + "," + y + "," + z + " " + k);
-					kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
+					//kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
 					kVectors = (Vec3D[]) append(kVectors, tempVect);
-
-					// println(x + "," + y + "," + z);
 				}
 			}
-			// endShape(CLOSE);
 			reDrawKnot = false;
-			// println("false");
 		}
 	}
 
@@ -1347,46 +1068,6 @@ public class UCubeV25 extends PApplet {
 	// --------------------------NEWHULL: Convex Hull
 	// Functions----------------------------------//
 
-	// colorHulls
-
-//	public void initRedPoints() {
-//
-//		// redPoints = new Point3d[redVectors.size()];
-//		redPoints = new Point3d[0];
-//
-//		for (int i = 0; i < redVectors.size(); i++) {
-//
-//			float x = redVectors.get(i).x;
-//			float y = redVectors.get(i).y;
-//			float z = redVectors.get(i).z;
-//
-//			Point3d tempPnt = new Point3d(x, y, z);
-//
-//			// redPoints[i] = new Point3d(x,y,z);
-//			redPoints = (Point3d[]) append(redPoints, tempPnt);
-//		}
-//
-//	}
-//
-//	public void initBluePoints() {
-//
-//		// redPoints = new Point3d[redVectors.size()];
-//		bluePoints = new Point3d[0];
-//
-//		for (int i = 0; i < blueVectors.size(); i++) {
-//
-//			float x = blueVectors.get(i).x;
-//			float y = blueVectors.get(i).y;
-//			float z = blueVectors.get(i).z;
-//
-//			Point3d tempPnt = new Point3d(x, y, z);
-//
-//			// redPoints[i] = new Point3d(x,y,z);
-//			bluePoints = (Point3d[]) append(bluePoints, tempPnt);
-//		}
-//
-//	}
-
 	public void initPoints(ArrayList<Vec3D> vectors, Point3d[] points) {
 
 		points = new Point3d[0];
@@ -1400,14 +1081,11 @@ public class UCubeV25 extends PApplet {
 				float z = vectors.get(i).z;
 
 				Point3d tempPnt = new Point3d(x, y, z);
-
-				// redPoints[i] = new Point3d(x,y,z);
 				points = (Point3d[]) append(points, tempPnt);
 			}
 		}
 	}
 
-	// TODO: make work with edit mode
 	public void drawHull(ArrayList<Vec3D> vectors, Point3d[] points, int color) {
 
 		initPoints(vectors, points);
@@ -1418,15 +1096,14 @@ public class UCubeV25 extends PApplet {
 		if (hb.hull.myCheck(points, points.length) == false) {
 
 			beginShape(TRIANGLE_STRIP);
-
 			strokeWeight(1);
 			stroke(color);
+			
 			if (doFill) {
 				fill(color);
 			} else {
 				noFill();
 			}
-			// fill(color);
 
 			for (int j = 0; j < points.length; j++) {
 
@@ -1447,22 +1124,19 @@ public class UCubeV25 extends PApplet {
 			} else {
 				noFill();
 			}
-			// fill(color);
 			beginShape(TRIANGLES);
 
 			for (int i1 = 0; i1 < hb.vectors.size(); i1 += 3) {
-
+				
 				vertex(hb.vectors.get(i1));
 				vertex(hb.vectors.get(i1 + 1));
 				vertex(hb.vectors.get(i1 + 2));
 			}
 			endShape();
 		}
-
 	}
 
 	// MINIMAL SPANNING TREE
-
 	public void drawMst() {
 
 		mVectors = new Vec3D[0];
@@ -1480,7 +1154,6 @@ public class UCubeV25 extends PApplet {
 
 			g.addVertex(i, mstVectors.get(i).x, mstVectors.get(i).y,
 					mstVectors.get(i).z);
-
 		}
 
 		for (int j = 0; j < maximumVertices; j++) {
@@ -1488,7 +1161,6 @@ public class UCubeV25 extends PApplet {
 				if (k != j) {
 					g.addEdge(j, k);
 				}
-				// println(j + " " + k);
 			}
 		}
 
@@ -1557,7 +1229,6 @@ public class UCubeV25 extends PApplet {
 	public void doMstHull(Point3d[] mstPoints) {
 
 		int numPoints = mstPoints.length;
-		// kVectors = new Vec3D[0];
 
 		if (mstHull.myCheck(mstPoints, numPoints) == false) {
 		} else if (mstHull.myCheck(mstPoints, numPoints) == true) {
@@ -1581,13 +1252,8 @@ public class UCubeV25 extends PApplet {
 					float x = (float) pnt2.x;
 					float y = (float) pnt2.y;
 					float z = (float) pnt2.z;
-					// vertex(x, y, z);
 					Vec3D tempVect = new Vec3D(x, y, z);
-					// println(x + "," + y + "," + z + " " + k);
-					// kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
 					mVectors = (Vec3D[]) append(mVectors, tempVect);
-
-					// println(x + "," + y + "," + z);
 				}
 			}
 			// endShape(CLOSE);
