@@ -50,7 +50,7 @@ public class UCubeV25 extends PApplet {
 	Vec3D[] kVectors = new Vec3D[0]; // collection of all knot vectors
 	Point3d[] knotPoints = new Point3d[0]; // knot points (cubes around each
 											// point)
-	//Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
+	Point3d[] kSavedPoints = new Point3d[0];// saved points for knot
 
 	// how thick your path is
 	int offset = 10; 
@@ -117,6 +117,7 @@ public class UCubeV25 extends PApplet {
 		// If you've upgraded from snow leopard to mountain lion, the ports
 		// changed at some point
 		myPort = new Serial(this, Serial.list()[4], 115200);
+		//230400
 		myPort.clear();
 
 	}
@@ -303,6 +304,7 @@ public class UCubeV25 extends PApplet {
 
 					}
 
+					// draw path
 					if (doKnot == true) {
 
 						if (reDrawKnot == true) {
@@ -529,32 +531,15 @@ public class UCubeV25 extends PApplet {
 	//TODO:make editing and reset work
 	public void editShape(ArrayList<Vec3D> vectors, Point3d[] points) {
 	//public void editShape() {
-		
-		
-		
-		println(vectors.subList(0, 5));
-	    println(savedVectors.subList(0,5));
-	    
-	    //println(points[2].toString());
-	   // println(savedPoints[2].toString());
-	    
-	    println(nav.vertexMouseOver);
 
 		vectors.get(nav.vertexMouseOver).x += PApplet.radians(mouseX - pmouseX) * 40;
 		vectors.get(nav.vertexMouseOver).y += PApplet.radians(mouseY - pmouseY) * 40;
-
-		//println(vectors.get(nav.vertexMouseOver).x + " " + savedVectors.get(nav.vertexMouseOver).x);
 
 		points[nav.vertexMouseOver].x += PApplet.radians(mouseX - pmouseX) * 40;
 		points[nav.vertexMouseOver].y += PApplet.radians(mouseY - pmouseY) * 40;	
 		
 		reDrawMst = true;
 		reDrawKnot = true;
-		
-		for(int i = 0; i < masterVectArray.length; i++) {
-			//println(masterVectArray[i]);
-		}
-
 		
 	}
 	
@@ -598,15 +583,15 @@ public class UCubeV25 extends PApplet {
 		strokeWeight(1);
 		textSize(32);
 		stroke(150, 0, 20);
-		line(-20, 20, 0, 800, 20, 0);
+		line(-20, 20, 0, 200, 20, 0);
 		fill(150, 0, 20);
 		text("X", 260, 20);
 		stroke(0, 150, 0);
-		line(-20, 20, 0, -20, -500, 0);
+		line(-20, 20, 0, -20, -200, 0);
 		fill(0, 150, 0);
 		text("Y", -20, -260);
 		stroke(0, 0, 150);
-		line(-20, 20, 0, -20, 20, 800);
+		line(-20, 20, 0, -20, 20, 200);
 		fill(0, 0, 150);
 		text("Z", -50, 20, 260);
 		fill(0, 0, 0);
@@ -659,6 +644,102 @@ public class UCubeV25 extends PApplet {
 	
 	public void sortString() {
 		
+//		int counter = 0;
+//		// vectors = new Vec3D[0];
+//		vectors.clear();
+//		points = new Point3d[0];
+//		
+//		savedVectors.clear();
+//		savedPoints = new Point3d[0];
+//		//println("cleared");
+//
+//		kVectors = null;
+//		kVectors = new Vec3D[0];
+//		knotPoints = new Point3d[0];
+//		knotVectors.clear();
+//
+//		mVectors = null;
+//		mVectors = new Vec3D[0];
+//		mstVectors.clear();
+//		mstPoints = new Point3d[0];
+//		
+//		
+//		for (int i = 0; i < inString.length(); i++) {
+//			//println("1: " + inString.length());
+//			char bit = inString.charAt(i);
+//
+//			// throw away leading bit from each shift register
+//			// (we're only using 7 of the 8 bits)
+//			if (i == 0 || i % 8 == 0) {
+//				inString.replace(bit, ' ');
+//			} else {
+//				// if the bit == 1, an led is plugged into that
+//				// space, so look up it's coordinate
+//				if (bit == '1') {
+//
+//					vectors.add(masterVectArray[counter]);
+//					points = (Point3d[]) append(points,
+//							masterPointArray[counter]);
+//					
+//					savedVectors.add(masterVectArray[counter]);
+//					savedPoints = (Point3d[]) append(savedPoints,
+//							masterPointArray[counter]);
+//					println("bit = 1 added");
+//
+//					if (knotVectors
+//							.contains(masterVectArray[counter])) {
+//
+//					} else {
+//						knotVectors
+//								.add(masterVectArray[counter]);
+//						// println(masterVectArray[counter]
+//						// + " true");
+//						reDrawKnot = true;
+//						knotMesh.clear();
+//					}
+//
+//					if (mstVectors
+//							.contains(masterVectArray[counter])) {
+//
+//					} else {
+//						mstVectors
+//								.add(masterVectArray[counter]);
+//						reDrawMst = true;
+//						mstMesh.clear();
+//					}
+//
+//				}
+//
+//				if (bit == '0') {
+//
+//					if (knotVectors
+//							.contains(masterVectArray[counter])) {
+//						knotVectors
+//								.remove(masterVectArray[counter]);
+//						reDrawKnot = true;
+//						knotMesh.clear();
+//						// println("removed");
+//					}
+//
+//					if (mstVectors
+//							.contains(masterVectArray[counter])) {
+//						mstVectors
+//								.remove(masterVectArray[counter]);
+//						reDrawMst = true;
+//						mstMesh.clear();
+//					}
+//				}
+//
+//				
+//				counter++;
+//			}
+//			
+//		}
+//		
+//		reDrawKnot = true;
+//		reDrawMst = true;
+//		
+		
 		int counter = 0;
 		// vectors = new Vec3D[0];
 		vectors.clear();
@@ -670,15 +751,10 @@ public class UCubeV25 extends PApplet {
 
 		kVectors = null;
 		kVectors = new Vec3D[0];
-		knotPoints = new Point3d[0];
-		knotVectors.clear();
 
 		mVectors = null;
 		mVectors = new Vec3D[0];
-		mstVectors.clear();
-		mstPoints = new Point3d[0];
-		
-		
+
 		for (int i = 0; i < inString.length(); i++) {
 			//println("1: " + inString.length());
 			char bit = inString.charAt(i);
@@ -751,10 +827,6 @@ public class UCubeV25 extends PApplet {
 			
 		}
 		
-		reDrawKnot = true;
-		reDrawMst = true;
-		
-		
 	}
 	
 
@@ -825,9 +897,9 @@ public class UCubeV25 extends PApplet {
 		Integer m = month();
 		Integer min = minute();
 		
-		String desktop = "/users/Ben/Desktop/";
+		String desktop = "/users/Ben/Desktop/UserData/";
 		
-		timeStamp = desktop + "myShape_" + m.toString() + d.toString() + min.toString() + ".stl";
+		timeStamp = desktop + "user4_1" + m.toString() + d.toString() + min.toString() + ".stl";
 		
 		message = "Export Success!";
 		
@@ -954,7 +1026,7 @@ public class UCubeV25 extends PApplet {
 		
 	}
 
-	// close knot by taking last point and first point in array and adding that
+	// close knot by taking last point and first point in array and add that
 	// hull to the shape
 	public void closeKnot() {
 
@@ -1017,6 +1089,7 @@ public class UCubeV25 extends PApplet {
 
 	public void doKnotHull(Point3d[] knotPoints) {		
 		
+		
 		int numPoints = knotPoints.length;
 
 		if (knotHull.myCheck(knotPoints, numPoints) == false) {
@@ -1042,7 +1115,7 @@ public class UCubeV25 extends PApplet {
 					float y = (float) pnt2.y;
 					float z = (float) pnt2.z;
 					Vec3D tempVect = new Vec3D(x, y, z);
-					//kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
+					kSavedPoints = (Point3d[]) append(kSavedPoints, pnt2);
 					kVectors = (Vec3D[]) append(kVectors, tempVect);
 				}
 			}
